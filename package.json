@@ -1,0 +1,25 @@
+{
+  "name": "romaji-name",
+  "version": "0.0.1",
+  "description": "Normalize and fix common issues with Romaji-based Japanese names.",
+  "main": "romaji-name.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jeresig/node-romaji-name.git"
+  },
+  "keywords": [
+    "ja",
+    "jp",
+    "japanese",
+    "romaji",
+    "language"
+  ],
+  "author": "John Resig <jeresig@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jeresig/node-romaji-name/issues"
+  }
+}
