@@ -34,6 +34,12 @@ var letterToAccents = {
     'U': 'ŪÛÜ'
 };
 
+// Common cases where another form is more-commonly used
+var badRomaji = {
+    "ou": "oo",
+    "si": "shi"
+};
+
 var letterToGoodAccent = {};
 var accentToLetter = {};
 
@@ -62,8 +68,10 @@ var repeatedVowelRegex = (function() {
         vowelStrings.push(letter + letter);
     });
 
-    return new RegExp("(?:" + vowelStrings.join("|") + ")", "g");
+    return new RegExp(vowelStrings.join("|"), "ig");
 })();
+
+var badRomajiRegex = new RegExp(badRomaji.keys().join("|"), "ig");
 
 module.exports = {
     // Fix n at end of name
@@ -130,6 +138,12 @@ module.exports = {
     correctAccents: function(name) {
         return name.replace(accentRegex, function(accent) {
             return letterToGoodAccent[accent] || accentToLetter[accent];
+        });
+    },
+
+    correctBadRomaji: function(name) {
+        return name.replace(badRomajiRegex, function(letters) {
+            return badRomaji[letters];
         });
     },
 
