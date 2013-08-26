@@ -21,5 +21,8 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/jeresig/node-romaji-name/issues"
+  },
+  "dependencies": {
+    "enamdict": "0.0.1"
   }
 }
