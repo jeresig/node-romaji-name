@@ -1,4 +1,4 @@
-var enamdict = require("../node-enamdict/enamdict");
+var enamdict = require("enamdict");
 
 // Thanks to Jed Schmidt!
 // https://twitter.com/jedschmidt/status/368179809551388672
