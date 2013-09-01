@@ -29,9 +29,8 @@ var generationRegex = new RegExp(generationKanji.join("|"), "g");
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' mark, it's used in some names
-// TODO: Remove all ' but [nm]'
-// TODO: Remove all , but the one separating names
 var puncRegex = /[!"#$%&()*+,\-.\/:;<=>?@[\\\]^_`{|}~\x3000-\x303F]/g;
+var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
 var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s]*[\u4e00-\u9faf]/;
@@ -136,7 +135,7 @@ module.exports = {
             }
 
             // Make sure the names are valid romaji before continuing
-            if (false && (!this.toKana(surname) || !this.toKana(given))) {
+            if (!this.toKana(surname) || !this.toKana(given)) {
                 // If one of them is not valid then we assume that we're
                 // dealing with a western name so we just leave it as-is.
                 var parts = uncorrectedName.split(/\s+/);
@@ -166,20 +165,20 @@ module.exports = {
                 if (enamName.given().romaji()) {
                     nameObj.given =
                         this.convertRepeatedVowel(enamName.given().romaji());
-                    nameObj.given_katakana = enamName.given().katakana() ||
+                    nameObj.given_kana = enamName.given().kana() ||
                         this.toKana(nameObj.given);
                 }
 
                 if (enamName.surname().romaji()) {
                     nameObj.surname =
                         this.convertRepeatedVowel(enamName.surname().romaji());
-                    nameObj.surname_katakana = enamName.surname().katakana() ||
+                    nameObj.surname_kana = enamName.surname().kana() ||
                         this.toKana(nameObj.surname);
                 }
 
-                if (nameObj.given_katakana && nameObj.surname_katakana) {
-                    nameObj.katakana = nameObj.surname_katakana +
-                        nameObj.given_katakana;
+                if (nameObj.given_kana && nameObj.surname_kana) {
+                    nameObj.kana = nameObj.surname_kana +
+                        nameObj.given_kana;
                 }
 
                 // Is this even useful?
@@ -191,10 +190,10 @@ module.exports = {
                 nameObj.name_plain = this.stripAccents(nameObj.name);
                 nameObj.surname = surname;
                 nameObj.given = given;
-                nameObj.surname_katakana = this.toKana(surname);
-                nameObj.given_katakana = this.toKana(given);
-                nameObj.katakana = nameObj.surname_katakana +
-                    nameObj.given_katakana;
+                nameObj.surname_kana = this.toKana(surname);
+                nameObj.given_kana = this.toKana(given);
+                nameObj.kana = nameObj.surname_kana +
+                    nameObj.given_kana;
             }
 
         // Otherwise there was only kanji left
@@ -210,7 +209,11 @@ module.exports = {
     },
 
     stripPunctuation: function(name) {
-        return name.replace(puncRegex, " ").trim();
+        return name
+            .replace(puncRegex, " ")
+            .replace(aposRegex, function(all, before) {
+                return before;
+            }).trim();
     },
 
     stripAccents: function(name) {
@@ -268,6 +271,7 @@ module.exports = {
     },
 
     toKana: function(name) {
+        // TODO: Should oo -> ou to match the conventions of ENAMDICT?
         var ret = hepburn.toHiragana(name);
         return /[a-z]/i.test(ret) ? "" : ret;
     }
