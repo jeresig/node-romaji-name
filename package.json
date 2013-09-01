@@ -23,6 +23,8 @@
     "url": "https://github.com/jeresig/node-romaji-name/issues"
   },
   "dependencies": {
-    "enamdict": "0.0.2"
+    "enamdict": "0.0.2",
+    "hepburn": "jeresig/hepburn",
+    "bulk-replace": "0.0.1"
   }
 }

@@ -1,4 +1,6 @@
-var enamdict = require("../node-enamdict/enamdict");
+var enamdict = require("enamdict");
+var hepburn = require("hepburn");
+var bulkReplace = require("bulk-replace");
 
 // Thanks to Jed Schmidt!
 // https://twitter.com/jedschmidt/status/368179809551388672
@@ -20,27 +22,28 @@ var generations = [
 // artist, and should be trimmed.
 var generationKanji = ["代", "世"];
 
+var generationRegex = new RegExp(generationKanji.join("|"), "g");
+
 // Punctuation
 // (Both ASCII and Japanese)
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' mark, it's used in some names
+// TODO: Remove all ' but [nm]'
+// TODO: Remove all , but the one separating names
 var puncRegex = /[!"#$%&()*+,\-.\/:;<=>?@[\\\]^_`{|}~\x3000-\x303F]/g;
 
 // Extract an, at least, 2 character long kanji string
 var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s]*[\u4e00-\u9faf]/;
 
+// All the conceivable bad accents that people could use instead of the typical
+// Romaji stress mark. The first character in each list has the proper accent.
 var letterToAccents = {
     'a': 'āáàăắặâấåäǟãą',
-    'A': 'ĀÄ',
     'e': 'ēéèêềěëėę',
-    'E': 'ĒÊЁ',
     'i': 'īíìîïįı',
-    'I': 'ĪİÎ',
     'o': 'ōóòôöőõȭȯȱøỏ',
-    'O': 'ŌÖÔ',
-    'u': 'ūúùŭûůüųűư',
-    'U': 'ŪÛÜ'
+    'u': 'ūúùŭûůüųűư'
 };
 
 // Common cases where another form is more-commonly used
@@ -49,57 +52,45 @@ var badRomaji = {
     "si": "shi"
 };
 
+// Build up the maps for later replacements
 var letterToGoodAccent = {};
 var accentToLetter = {};
+var accentToASCII = {};
+var accentToGoodAccent = {};
+var asciiToAccent = {};
+var asciiToLetter = {};
 
-var accentRegex = (function() {
-    var accentStr = "";
+Object.keys(letterToAccents).forEach(function(letter) {
+    var accents = letterToAccents[letter];
+    var goodAccent = accents.slice(0, 1);
+    var letterPair = letter + letter;
 
-    Object.keys(letterToAccents).forEach(function(letter) {
-        var accents = letterToAccents[letter];
-
-        accents.split("").forEach(function(accent) {
-            accentToLetter[accent] = letter;
-        });
-
-        accentStr += accents;
-
-        letterToGoodAccent[letter] = accents.slice(0, 1);
+    accents.split("").forEach(function(accent) {
+        accentToLetter[accent] = letter;
+        accentToASCII[accent] = letterPair;
+        accentToGoodAccent[accent] = goodAccent;
     });
 
-    return new RegExp("[" + accentStr + "]", "g");
-})();
+    letterToGoodAccent[letter] = goodAccent;
+    asciiToAccent[letterPair] = goodAccent;
+    asciiToLetter[letterPair] = letter;
 
-var repeatedVowelRegex = (function() {
-    var vowelStrings = ["ou", "OU"];
-
-    Object.keys(letterToGoodAccent).forEach(function(letter) {
-        vowelStrings.push(letter + letter);
-    });
-
-    return new RegExp(vowelStrings.join("|"), "ig");
-})();
-
-var badRomajiRegex = new RegExp(Object.keys(badRomaji).join("|"), "ig");
-
-var generationRegex = new RegExp(generationKanji.join("|"), "g");
+    // Hack for usage of "ou", treat the same as "oo"
+    if (letter === "o") {
+        asciiToAccent["ou"] = goodAccent;
+        asciiToLetter["ou"] = letter;
+    }
+});
 
 module.exports = {
     init: function(callback) {
         enamdict.init(callback);
     },
 
-    // Fix n at end of name
-    // Fix n next to consanant
-
-    makeNameObject: function(name) {
-        return {
+    parseName: function(name) {
+        var nameObj = {
             original: name
         };
-    },
-
-    parseName: function(name) {
-        var nameObj = this.makeNameObject(name);
 
         var cleaned = name;
 
@@ -124,51 +115,86 @@ module.exports = {
 
         cleaned = this.splitComma(cleaned);
         cleaned = this.stripPunctuation(cleaned);
+        cleaned = cleaned.trim();
+
+        var uncorrectedName = cleaned;
+
+        // Simplify the processing by starting in lowercase
+        cleaned = cleaned.toLowerCase();
         cleaned = this.correctAccents(cleaned);
         cleaned = this.stripAccentsToASCII(cleaned);
         cleaned = this.correctBadRomaji(cleaned);
-        cleaned = cleaned.trim();
 
         // Make sure that ASCII characters are left to convert!
-        if (/\w+/.test(cleaned)) {
-            var enamName = enamdict.findByName(cleaned);
+        if (/([a-z']+)\s*([a-z']*)/.test(cleaned)) {
+            if (RegExp.$2) {
+                var surname = RegExp.$1;
+                var given = RegExp.$2;
+            } else {
+                var surname = "";
+                var given = RegExp.$1;
+            }
+
+            // Make sure the names are valid romaji before continuing
+            if (false && (!this.toKana(surname) || !this.toKana(given))) {
+                // If one of them is not valid then we assume that we're
+                // dealing with a western name so we just leave it as-is.
+                var parts = uncorrectedName.split(/\s+/);
+
+                nameObj.given = parts[0];
+                nameObj.surname = parts[1] || "";
+                nameObj.name = uncorrectedName;
+                nameObj.name_ascii = nameObj.name_plain =
+                    this.stripAccents(uncorrectedName);
+                nameObj.format = "modern";
+
+                return nameObj;
+            }
+
+            var enamName = enamdict.findByName(
+                (surname ? surname + " " : "") + given);
 
             if (enamName) {
                 if (enamName.romaji()) {
-                    nameObj.romaji =
+                    nameObj.name =
                         this.convertRepeatedVowel(enamName.romaji());
-                    nameObj.romaji_ascii = enamName.romaji();
-                    nameObj.romaji_plain =
+                    nameObj.name_ascii = enamName.romaji();
+                    nameObj.name_plain =
                         this.stripRepeatedVowel(enamName.romaji());
                 }
 
                 if (enamName.given().romaji()) {
-                    nameObj.given_romaji =
+                    nameObj.given =
                         this.convertRepeatedVowel(enamName.given().romaji());
+                    nameObj.given_katakana = enamName.given().katakana() ||
+                        this.toKana(nameObj.given);
                 }
+
                 if (enamName.surname().romaji()) {
-                    nameObj.surname_romaji =
+                    nameObj.surname =
                         this.convertRepeatedVowel(enamName.surname().romaji());
+                    nameObj.surname_katakana = enamName.surname().katakana() ||
+                        this.toKana(nameObj.surname);
                 }
 
-                if (enamName.katakana()) {
-                    nameObj.katakana = enamName.katakana();
-                }
-
-                if (enamName.given().katakana()) {
-                    nameObj.given_katakana = enamName.given().katakana();
-                }
-                if (enamName.surname().katakana()) {
-                    nameObj.surname_katakana = enamName.surname().katakana();
+                if (nameObj.given_katakana && nameObj.surname_katakana) {
+                    nameObj.katakana = nameObj.surname_katakana +
+                        nameObj.given_katakana;
                 }
 
                 // Is this even useful?
                 //nameObj.possible_kanji = enamName.kanji();
 
             } else {
-                nameObj.romaji = this.convertRepeatedVowel(cleaned);
-                nameObj.romaji_ascii = cleaned;
-                nameObj.romaji_plain = this.stripAccents(nameObj.romaji);
+                nameObj.name = this.convertRepeatedVowel(cleaned);
+                nameObj.name_ascii = cleaned;
+                nameObj.name_plain = this.stripAccents(nameObj.name);
+                nameObj.surname = surname;
+                nameObj.given = given;
+                nameObj.surname_katakana = this.toKana(surname);
+                nameObj.given_katakana = this.toKana(given);
+                nameObj.katakana = nameObj.surname_katakana +
+                    nameObj.given_katakana;
             }
 
         // Otherwise there was only kanji left
@@ -188,40 +214,27 @@ module.exports = {
     },
 
     stripAccents: function(name) {
-        return name.replace(accentRegex, function(accent) {
-            return accentToLetter[accent];
-        });
+        return bulkReplace(name, accentToLetter);
     },
 
     stripAccentsToASCII: function(name) {
-        return name.replace(accentRegex, function(accent) {
-            return accentToLetter[accent] + accentToLetter[accent];
-        });
+        return bulkReplace(name, accentToASCII);
     },
 
     correctAccents: function(name) {
-        return name.replace(accentRegex, function(accent) {
-            return letterToGoodAccent[accentToLetter[accent]];
-        });
+        return bulkReplace(name, accentToGoodAccent);
     },
 
     correctBadRomaji: function(name) {
-        return name.replace(badRomajiRegex, function(letters) {
-            return badRomaji[letters];
-        });
+        return bulkReplace(name, badRomaji);
     },
 
     convertRepeatedVowel: function(name) {
-        return name.replace(repeatedVowelRegex, function(letters) {
-            var letter = letters.slice(0, 1);
-            return letterToGoodAccent[letter];
-        });
+        return bulkReplace(name, asciiToAccent);
     },
 
     stripRepeatedVowel: function(name) {
-        return name.replace(repeatedVowelRegex, function(letters) {
-            return letters.slice(0, 1);
-        });
+        return bulkReplace(name, asciiToLetter);
     },
 
     extractKanji: function(name) {
@@ -252,5 +265,10 @@ module.exports = {
         name = name.replace(generationRegex, "");
 
         return [name, generation];
+    },
+
+    toKana: function(name) {
+        var ret = hepburn.toHiragana(name);
+        return /[a-z]/i.test(ret) ? "" : ret;
     }
 };

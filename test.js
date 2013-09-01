@@ -13,4 +13,7 @@ romajiName.init(function() {
     console.log(romajiName.parseName("Choki Eishosai"));
     console.log(romajiName.parseName("Sharaku Toshusai"));
     console.log(romajiName.parseName("Shunei Katsukawa"));
+    console.log(romajiName.parseName("Charles Bartlett"));
+    console.log(romajiName.parseName("Ma ZHONGJUN"));
+    console.log(romajiName.parseName("Mai Li"));
 });
