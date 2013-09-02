@@ -19,61 +19,65 @@ If you like this module this you may also be interested in the two other modules
 Example
 -------
 
-    var romajiName = require("romaji-name");
+```javascript
+var romajiName = require("romaji-name");
 
-    // Wait for the module to completely load
-    // (loads the ENAMDICT dictionary)
-    romajiName.init(function() {
-        console.log(romajiName.parseName("Kenichi Nakamura"));
-        console.log(romajiName.parseName("Gakuryo Nakamura"));
-        console.log(romajiName.parseName("Charles Bartlett"));
-    });
+// Wait for the module to completely load
+// (loads the ENAMDICT dictionary)
+romajiName.init(function() {
+    console.log(romajiName.parseName("Kenichi Nakamura"));
+    console.log(romajiName.parseName("Gakuryo Nakamura"));
+    console.log(romajiName.parseName("Charles Bartlett"));
+});
+```
 
 Which will log out objects that looks something like this:
 
-    // Note the correction of the order of the given/surname
-    // Also note the correct kana generated and the injection
-    // of the missing '
-    {
-        original: 'Kenichi Nakamura',
-        name_format: 'surname given generation',
-        locale: 'ja',
-        given: 'Ken\'ichi',
-        given_kana: 'けんいち',
-        surname: 'Nakamura',
-        surname_kana: 'なかむら',
-        name: 'Nakamura Ken\'ichi',
-        ascii: 'Nakamura Ken\'ichi',
-        plain: 'Nakamura Ken\'ichi',
-        kana: 'なかむらけんいち'
-    }
-    // Note the correction of the order of the given/surname
-    // Also note the correction of the missing ō
-    {
-        original: 'Gakuryo Nakamura',
-        name_format: 'surname given generation',
-        locale: 'ja',
-        given: 'Gakuryō',
-        given_kana: 'がくりょう',
-        surname: 'Nakamura',
-        surname_kana: 'なかむら',
-        name: 'Nakamura Gakuryō',
-        ascii: 'Nakamura Gakuryoo',
-        plain: 'Nakamura Gakuryo',
-        kana: 'なかむらがくりょう'
-    }
-    // Note that it detects that this is likely not a Japanese name
-    // (and leaves the locale empty, accordingly)
-    {
-        original: 'Charles Bartlett',
-        name_format: 'given surname generation',
-        locale: '',
-        given: 'Charles',
-        surname: 'Bartlett',
-        name: 'Charles Bartlett',
-        ascii: 'Charles Bartlett',
-        plain: 'Charles Bartlett'
-    }
+```javascript
+// Note the correction of the order of the given/surname
+// Also note the correct kana generated and the injection
+// of the missing '
+{
+    original: 'Kenichi Nakamura',
+    name_format: 'surname given generation',
+    locale: 'ja',
+    given: 'Ken\'ichi',
+    given_kana: 'けんいち',
+    surname: 'Nakamura',
+    surname_kana: 'なかむら',
+    name: 'Nakamura Ken\'ichi',
+    ascii: 'Nakamura Ken\'ichi',
+    plain: 'Nakamura Ken\'ichi',
+    kana: 'なかむらけんいち'
+}
+// Note the correction of the order of the given/surname
+// Also note the correction of the missing ō
+{
+    original: 'Gakuryo Nakamura',
+    name_format: 'surname given generation',
+    locale: 'ja',
+    given: 'Gakuryō',
+    given_kana: 'がくりょう',
+    surname: 'Nakamura',
+    surname_kana: 'なかむら',
+    name: 'Nakamura Gakuryō',
+    ascii: 'Nakamura Gakuryoo',
+    plain: 'Nakamura Gakuryo',
+    kana: 'なかむらがくりょう'
+}
+// Note that it detects that this is likely not a Japanese name
+// (and leaves the locale empty, accordingly)
+{
+    original: 'Charles Bartlett',
+    name_format: 'given surname generation',
+    locale: '',
+    given: 'Charles',
+    surname: 'Bartlett',
+    name: 'Charles Bartlett',
+    ascii: 'Charles Bartlett',
+    plain: 'Charles Bartlett'
+}
+```
 
 Installation
 ------------
