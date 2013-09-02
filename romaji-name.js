@@ -94,7 +94,6 @@ module.exports = {
     parseName: function(name) {
         var nameObj = {
             original: name,
-            name_format: "surname given generation",
             locale: "ja"
         };
 
@@ -129,6 +128,9 @@ module.exports = {
                 var given = RegExp.$1;
             }
 
+            // Set a name format for later name generation
+            nameObj.name_format = "surname given generation";
+
             // Make sure the names are valid romaji before continuing
             if ((surname && !this.toKana(surname)) ||
                     (given && !this.toKana(given))) {
@@ -145,22 +147,107 @@ module.exports = {
                 return nameObj;
             }
 
-            var enamName = enamdict.findByName(
-                (surname ? surname + " " : "") + given);
+            // Look up the two parts of the name in ENAMDICT
+            var givenEntries = enamdict.find(given);
+            var surnameEntries = enamdict.find(surname);
 
-            if (enamName) {
-                if (enamName.given().romaji()) {
-                    nameObj.given =
-                        this.convertRepeatedVowel(enamName.given().romaji());
-                    nameObj.given_kana = enamName.given().kana() ||
-                        this.toKana(nameObj.given);
+            if (givenEntries || surnameEntries) {
+                // Fix cases where only one of the two names was found
+                if (!givenEntries || !surnameEntries) {
+                    if (givenEntries) {
+                        // Swap the names if they're in the wrong place
+                        if (givenEntries.type() === "surname") {
+                            var tmp = surname;
+                            surname = given;
+                            given = tmp;
+                            surnameEntries = givenEntries;
+                            givenEntries = null;
+                        }
+
+                    } else {
+                        // Swap the names if they're in the wrong place
+                        if (surnameEntries.type() === "given") {
+                            var tmp = given;
+                            given = surname;
+                            surname = tmp;
+                            givenEntries = surnameEntries;
+                            surnameEntries = null;
+                        }
+                    }
+
+                // Otherwise both parts of the name were found
+                // Fix the case where the names are reversed
+                } else if ((surnameEntries.type() === "given" ||
+                        givenEntries.type() === "surname") &&
+                        surnameEntries.type() !== givenEntries.type()) {
+                    var tmp = surnameEntries;
+                    surnameEntries = givenEntries;
+                    givenEntries = tmp;
                 }
 
-                if (enamName.surname().romaji()) {
-                    nameObj.surname =
-                        this.convertRepeatedVowel(enamName.surname().romaji());
-                    nameObj.surname_kana = enamName.surname().kana() ||
-                        this.toKana(nameObj.surname);
+                // Get the romaji names, if they exist in ENAMDICT
+                // If not, fall back to what was provided
+                var givenRomaji = givenEntries ?
+                    givenEntries.romaji() : given;
+                var surnameRomaji = surnameEntries ?
+                    surnameEntries.romaji() : surname;
+
+                // Get the kana names, if they exist in ENAMDICT
+                // If not, generate our own kana using hepburn
+                var givenKana = givenEntries && givenEntries.kana() ||
+                    this.toKana(givenRomaji || "");
+                var surnameKana = surnameEntries && surnameEntries.kana() ||
+                    this.toKana(surnameRomaji || "");
+
+                if (givenRomaji) {
+                    nameObj.given = this.convertRepeatedVowel(givenRomaji);
+                    nameObj.given_kana = givenKana;
+                }
+
+                if (surnameRomaji) {
+                    nameObj.surname = this.convertRepeatedVowel(surnameRomaji);
+                    nameObj.surname_kana = surnameKana;
+                }
+
+                // Figure out how the kanji name relates to which name part
+                if (nameObj.kanji) {
+                    var nameKanji = nameObj.kanji;
+                    var givenKanji = givenEntries && givenEntries.kanji();
+                    var surnameKanji = surnameEntries &&
+                        surnameEntries.kanji();
+
+                    if (givenKanji) {
+                        var foundNames = givenKanji.filter(function(kanji) {
+                            return nameKanji.indexOf(kanji) >= 0;
+                        });
+
+                        // Hopefully only one name is found
+                        if (foundNames.length > 0) {
+                            nameObj.given_kanji = foundNames[0];
+                        }
+                    }
+
+                    if (surnameKanji) {
+                        var foundNames = surnameKanji.filter(function(kanji) {
+                            return nameKanji.indexOf(kanji) >= 0;
+                        });
+
+                        // Hopefully only one name is found
+                        if (foundNames.length > 0) {
+                            nameObj.surname_kanji = foundNames[0];
+                        }
+                    }
+
+                    // If only one of the kanji is found
+                    if (nameObj.given_kanji !== nameObj.surname_kanji) {
+                        if (nameObj.given_kanji) {
+                            nameObj.surname_kanji = nameKanji
+                                .replace(nameObj.given_kanji, "");
+                        } else {
+                            nameObj.given_kanji = nameKanji
+                                .replace(nameObj.surname_kanji, "");
+                        }
+                    }
                 }
 
                 this.injectFullName(nameObj);
@@ -174,8 +261,80 @@ module.exports = {
             }
 
         // Otherwise there was only kanji left
-        } else {
-            // TODO: Handle the kanji, possibly do a name lookup?
+        } else if (nameObj.kanji) {
+            // Check whole name
+            var kanjiName = enamdict.findKanji(nameObj.kanji);
+
+            if (kanjiName) {
+                if (kanjiName.type() === "given") {
+                    nameObj.given_kanji = nameObj.kanji;
+
+                } else if (kanjiName.type() === "surname") {
+                    nameObj.surname_kanji = nameObj.kanji;
+                }
+
+            } else {
+                var complete = [];
+                var partial = [];
+
+                // Split name 1 .. n
+                for (var pos = 1; pos < nameObj.kanji.length; pos++) {
+                    var surname = nameObj.kanji.substr(0, pos);
+                    var given = nameObj.kanji.substr(pos);
+
+                    var match = {
+                        diff: Math.abs(surname.length - given.length),
+                        surname: enamdict.findKanji(surname),
+                        given: enamdict.findKanji(given)
+                    };
+
+                    if (match.surname && match.given) {
+                        complete.push(match);
+
+                    } else if (match.surname || match.given) {
+                        partial.push(match);
+                    }
+                }
+
+                if (complete.length > 0) {
+                    // Find the name with the least-dramatic difference in
+                    // size (e.g. AABB is more likely than ABBB)
+                    complete = complete.sort(function(a, b) {
+                        return Math.abs(a.surname.length - a.given.length) -
+                            Math.abs(b.surname.length - b.given.length);
+                    });
+
+                    nameObj.surname_kanji = complete[0].surname.kanji();
+                    nameObj.given_kanji = complete[0].given.kanji();
+
+                // Otherwise if there are an odd number of partial matches then
+                // we guess and go for the one that evenly splits the name
+                } else if (partial.length > 0) {
+                    partial = partial.filter(function(name) {
+                        return name.diff === 0;
+                    });
+
+                    if (partial.length > 0) {
+                        var partialSurname = partial[0].surname &&
+                            partial[0].surname.kanji();
+                        var partialGiven = partial[0].given &&
+                            partial[0].given.kanji();
+
+                        if (partialSurname) {
+                            partialGiven = nameObj.kanji
+                                .replace(partialSurname, "");
+                        } else {
+                            partialSurname = nameObj.kanji
+                                .replace(partialGiven, "");
+                        }
+
+                        nameObj.surname_kanji = partialSurname;
+                        nameObj.given_kanji = partialGiven;
+                    }
+                }
+
+                // Anything else is going to be too ambiguous
+            }
         }
 
         return nameObj;
@@ -237,6 +396,11 @@ module.exports = {
 
         if (nameObj.given_kana) {
             nameObj.kana = (nameObj.surname_kana || "") + nameObj.given_kana;
+        }
+
+        if (nameObj.given_kanji) {
+            nameObj.kanji = (nameObj.surname_kanji || "") +
+                nameObj.given_kanji;
         }
 
         return nameObj;
@@ -314,17 +478,6 @@ module.exports = {
             // Extract generation info from kanji if it exists
             kanji = this.extractGeneration(kanji, nameObj);
             nameObj.kanji = kanji;
-
-            // TODO: A pretty big hack, maybe use ENAMDICT to do it for real?
-            if (kanji.length === 6) {
-                nameObj.surname_kanji = kanji.substr(0, 3);
-                nameObj.given_kanji = kanji.substr(3);
-            } else if (kanji.length === 4) {
-                nameObj.surname_kanji = kanji.substr(0, 2);
-                nameObj.given_kanji = kanji.substr(2);
-            } else if (kanji.length === 2) {
-                nameObj.given_kanji = kanji;
-            }
         }
 
         return name;
