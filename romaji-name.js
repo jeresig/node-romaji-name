@@ -18,6 +18,8 @@ var generations = [
     /(10|１０|[十拾]|\bX\b)/i
 ];
 
+var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
 // These characters are typically used to denote the generation of the
 // artist, and should be trimmed.
 var generationKanji = ["代", "世"];
@@ -50,6 +52,9 @@ var badRomaji = {
     "ou": "oo",
     "si": "shi"
 };
+
+// Should be using n instead
+var badMUsage = /m([^aeiouy]|$)/i;
 
 // Build up the maps for later replacements
 var letterToGoodAccent = {};
@@ -88,31 +93,19 @@ module.exports = {
 
     parseName: function(name) {
         var nameObj = {
-            original: name
+            original: name,
+            name_format: "surname given generation",
+            locale: "ja"
         };
 
-        var cleaned = name;
+        var cleaned = this.cleanWhitespace(name);
 
-        var kanjiResults = this.extractKanji(cleaned);
-        cleaned = kanjiResults[0];
-        if (kanjiResults[1]) {
-            nameObj.kanji = kanjiResults[1];
+        // Extract extra information (kanji, generation)
+        cleaned = this.extractKanji(cleaned, nameObj);
+        cleaned = this.extractGeneration(cleaned, nameObj);
 
-            // Extract generation info from kanji if it exists
-            var genResults = this.extractGeneration(nameObj.kanji);
-            nameObj.kanji = genResults[0];
-            if (genResults[1]) {
-                nameObj.generation = genResults[1];
-            }
-        }
-
-        var genResults = this.extractGeneration(cleaned);
-        cleaned = genResults[0];
-        if (genResults[1]) {
-            nameObj.generation = genResults[1];
-        }
-
-        cleaned = this.splitComma(cleaned);
+        // Clean up the string
+        cleaned = this.flipName(cleaned);
         cleaned = this.stripPunctuation(cleaned);
         cleaned = cleaned.trim();
 
@@ -120,6 +113,8 @@ module.exports = {
 
         // Simplify the processing by starting in lowercase
         cleaned = cleaned.toLowerCase();
+
+        // Fix lots of bad Romaji usage
         cleaned = this.correctAccents(cleaned);
         cleaned = this.stripAccentsToASCII(cleaned);
         cleaned = this.correctBadRomaji(cleaned);
@@ -135,17 +130,17 @@ module.exports = {
             }
 
             // Make sure the names are valid romaji before continuing
-            if (!this.toKana(surname) || !this.toKana(given)) {
+            if ((surname && !this.toKana(surname)) ||
+                    (given && !this.toKana(given))) {
                 // If one of them is not valid then we assume that we're
                 // dealing with a western name so we just leave it as-is.
                 var parts = uncorrectedName.split(/\s+/);
 
                 nameObj.given = parts[0];
                 nameObj.surname = parts[1] || "";
-                nameObj.name = uncorrectedName;
-                nameObj.name_ascii = nameObj.name_plain =
-                    this.stripAccents(uncorrectedName);
-                nameObj.format = "modern";
+                nameObj.name_format = "given surname generation";
+                nameObj.locale = "";
+                this.injectFullName(nameObj);
 
                 return nameObj;
             }
@@ -154,14 +149,6 @@ module.exports = {
                 (surname ? surname + " " : "") + given);
 
             if (enamName) {
-                if (enamName.romaji()) {
-                    nameObj.name =
-                        this.convertRepeatedVowel(enamName.romaji());
-                    nameObj.name_ascii = enamName.romaji();
-                    nameObj.name_plain =
-                        this.stripRepeatedVowel(enamName.romaji());
-                }
-
                 if (enamName.given().romaji()) {
                     nameObj.given =
                         this.convertRepeatedVowel(enamName.given().romaji());
@@ -176,24 +163,14 @@ module.exports = {
                         this.toKana(nameObj.surname);
                 }
 
-                if (nameObj.given_kana && nameObj.surname_kana) {
-                    nameObj.kana = nameObj.surname_kana +
-                        nameObj.given_kana;
-                }
-
-                // Is this even useful?
-                //nameObj.possible_kanji = enamName.kanji();
+                this.injectFullName(nameObj);
 
             } else {
-                nameObj.name = this.convertRepeatedVowel(cleaned);
-                nameObj.name_ascii = cleaned;
-                nameObj.name_plain = this.stripAccents(nameObj.name);
                 nameObj.surname = surname;
                 nameObj.given = given;
                 nameObj.surname_kana = this.toKana(surname);
                 nameObj.given_kana = this.toKana(given);
-                nameObj.kana = nameObj.surname_kana +
-                    nameObj.given_kana;
+                this.injectFullName(nameObj);
             }
 
         // Otherwise there was only kanji left
@@ -204,8 +181,88 @@ module.exports = {
         return nameObj;
     },
 
-    splitComma: function(name) {
-        return name.split(/,\s*/).reverse().join(" ");
+    mergeNames: function(base, child) {
+        var nameObj = {};
+        var mergeBlacklist = ["generation", "kanji"];
+
+        for (var prop in base) {
+            if (mergeBlacklist.indexOf(prop) < 0) {
+                nameObj[prop] = base[prop];
+            }
+        }
+
+        for (var prop in child) {
+            if (child[prop]) {
+                nameObj[prop] = child[prop];
+            }
+        }
+
+        // Generate new: name/name_ascii/name_plain/kana
+        this.injectFullName(nameObj);
+
+        return nameObj;
+    },
+
+    genFullName: function(nameObj) {
+        var name = "";
+
+        nameObj.name_format.split(/\s+/).forEach(function(part) {
+            var value = nameObj[part];
+
+            if (part === "generation") {
+                value = generationMap[value];
+            }
+
+            // Only add something if the part is empty and don't add
+            // a generation if it's just 1 (since it's superflous)
+            if (value) {
+                name += (name ? " " : "") + value;
+            }
+        });
+
+        return name.trim();
+    },
+
+    injectFullName: function(nameObj) {
+        this.capitalizeNames(nameObj);
+
+        var name = this.genFullName(nameObj);
+
+        if (name) {
+            nameObj.name = name;
+            nameObj.ascii = nameObj.locale === "ja" ?
+                this.stripAccentsToASCII(name) : name;
+            nameObj.plain = this.stripAccents(name);
+        }
+
+        if (nameObj.given_kana) {
+            nameObj.kana = (nameObj.surname_kana || "") + nameObj.given_kana;
+        }
+
+        return nameObj;
+    },
+
+    capitalizeNames: function(nameObj) {
+        if (nameObj.given) {
+            nameObj.given = this.capitalize(nameObj.given);
+        }
+        if (nameObj.surname) {
+            nameObj.surname = this.capitalize(nameObj.surname);
+        }
+    },
+
+    capitalize: function(name) {
+        name = name.toLowerCase();
+        return name.substr(0, 1).toUpperCase() + name.substr(1);
+    },
+
+    cleanWhitespace: function(name) {
+        return name.replace(/\r?\n/g, " ").trim();
+    },
+
+    flipName: function(name, split) {
+        split = split || /,\s*/;
+        return name.split(split).reverse().join(" ");
     },
 
     stripPunctuation: function(name) {
@@ -229,7 +286,9 @@ module.exports = {
     },
 
     correctBadRomaji: function(name) {
-        return bulkReplace(name, badRomaji);
+        name = bulkReplace(name, badRomaji);
+        name = name.replace(badMUsage, "n$1");
+        return name;
     },
 
     convertRepeatedVowel: function(name) {
@@ -240,7 +299,7 @@ module.exports = {
         return bulkReplace(name, asciiToLetter);
     },
 
-    extractKanji: function(name) {
+    extractKanji: function(name, nameObj) {
         var kanji = "";
 
         name = name.replace(kanjiRegex, function(all) {
@@ -251,10 +310,27 @@ module.exports = {
         // Strip extraneous whitespace from the kanji
         kanji = kanji.replace(/\s+/g, "");
 
-        return [name, kanji];
+        if (kanji) {
+            // Extract generation info from kanji if it exists
+            kanji = this.extractGeneration(kanji, nameObj);
+            nameObj.kanji = kanji;
+
+            // TODO: A pretty big hack, maybe use ENAMDICT to do it for real?
+            if (kanji.length === 6) {
+                nameObj.surname_kanji = kanji.substr(0, 3);
+                nameObj.given_kanji = kanji.substr(3);
+            } else if (kanji.length === 4) {
+                nameObj.surname_kanji = kanji.substr(0, 2);
+                nameObj.given_kanji = kanji.substr(2);
+            } else if (kanji.length === 2) {
+                nameObj.given_kanji = kanji;
+            }
+        }
+
+        return name;
     },
 
-    extractGeneration: function(name) {
+    extractGeneration: function(name, nameObj) {
         var generation = "";
 
         generations.forEach(function(genRegex, i) {
@@ -267,7 +343,11 @@ module.exports = {
         // Remove extraneous generation kanji words
         name = name.replace(generationRegex, "");
 
-        return [name, generation];
+        if (generation) {
+            nameObj.generation = generation;
+        }
+
+        return name;
     },
 
     toKana: function(name) {

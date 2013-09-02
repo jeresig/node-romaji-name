@@ -16,4 +16,9 @@ romajiName.init(function() {
     console.log(romajiName.parseName("Charles Bartlett"));
     console.log(romajiName.parseName("Ma ZHONGJUN"));
     console.log(romajiName.parseName("Mai Li"));
+
+    console.log(romajiName.mergeNames(
+        romajiName.parseName("Utagawa Kunitomi I (国富)"),
+        romajiName.parseName("Toyoshige II (国重　二代)")
+    ));
 });
