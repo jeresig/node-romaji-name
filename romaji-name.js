@@ -93,9 +93,18 @@ module.exports = {
     },
 
     parseName: function(name, options) {
+        // Fallback options object
+        options = options || {};
+
         // Assume that we're re-parsing a name object
         if (typeof name === "object") {
-            options = name.options;
+            if (name.options) {
+                for (var prop in name.options) {
+                    if (!(prop in options)) {
+                        options[prop] = name.options[prop];
+                    }
+                }
+            }
             name = name.original || name.name;
         }
 
@@ -104,12 +113,9 @@ module.exports = {
             locale: "ja"
         };
 
-        if (options) {
+        if (Object.keys(options).length > 0) {
             nameObj.options = options;
         }
-
-        // Fallback options object
-        options = options || {};
 
         var cleaned = this.cleanWhitespace(name);
 

@@ -274,6 +274,26 @@ romajiName.init(function() {
     });
 
     (function() {
+        var expected = { original: 'Toyokuni UTAGAWA',
+          locale: 'ja',
+          options: { givenFirst: false },
+          name_format: 'surname given generation',
+          given: 'Toyokuni',
+          given_kana: 'とよくに',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Toyokuni',
+          ascii: 'Utagawa Toyokuni',
+          plain: 'Utagawa Toyokuni',
+          kana: 'うたがわとよくに' };
+        var actual = romajiName.parseName(expected, {
+            givenFirst: true
+        });
+        expected.options.givenFirst = true;
+        assert.deepEqual(actual, expected);
+    })();
+
+    (function() {
         var expected = { original: 'Toyoshige II (国重　二代)',
           locale: 'ja',
           name_format: 'surname given generation',
