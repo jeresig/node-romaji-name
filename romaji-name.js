@@ -114,6 +114,9 @@ module.exports = {
             name = name.original || name.name;
         }
 
+        // Fallback to an empty string if no name is provided
+        name = name || "";
+
         var nameObj = {
             original: name,
             locale: "ja"
@@ -176,7 +179,7 @@ module.exports = {
             // name is always first. This doesn't matter for non-Japanese
             // names (like above) but does matter for Japanese names,
             // which are expected to be surname first.
-            if (options.givenFirst) {
+            if (options.givenFirst && surname && given) {
                 var tmp = surname;
                 surname = given;
                 given = tmp;
@@ -275,10 +278,12 @@ module.exports = {
 
                     // If only one of the kanji is found
                     if (nameObj.given_kanji !== nameObj.surname_kanji) {
-                        if (nameObj.given_kanji !== nameKanji) {
+                        if (nameObj.given_kanji &&
+                                nameObj.given_kanji !== nameKanji) {
                             nameObj.surname_kanji = nameKanji
                                 .replace(nameObj.given_kanji, "");
-                        } else if (nameObj.surname_kanji !== nameKanji) {
+                        } else if (nameObj.surname_kanji &&
+                                nameObj.surname_kanji !== nameKanji) {
                             nameObj.given_kanji = nameKanji
                                 .replace(nameObj.surname_kanji, "");
                         }
