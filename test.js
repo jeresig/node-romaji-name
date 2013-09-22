@@ -3,6 +3,58 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Torii Kiyonaga',
+          locale: 'ja',
+          name_format: 'surname given generation',
+          given: 'Kiyonaga',
+          given_kana: 'きよなが',
+          surname: 'Torii',
+          surname_kana: 'とりい',
+          name: 'Torii Kiyonaga',
+          ascii: 'Torii Kiyonaga',
+          plain: 'Torii Kiyonaga',
+          kana: 'とりいきよなが' },
+        { original: 'Toyokuni UTAGAWA',
+          locale: 'ja',
+          options: { givenFirst: true },
+          name_format: 'surname given generation',
+          given: 'Toyokuni',
+          given_kana: 'とよくに',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Toyokuni',
+          ascii: 'Utagawa Toyokuni',
+          plain: 'Utagawa Toyokuni',
+          kana: 'うたがわとよくに' },
+        { original: 'Toyokuni UTAGAWA',
+          locale: 'ja',
+          name_format: 'surname given generation',
+          given: 'Utagawa',
+          given_kana: 'うたがわ',
+          surname: 'Toyokuni',
+          surname_kana: 'とよくに',
+          name: 'Toyokuni Utagawa',
+          ascii: 'Toyokuni Utagawa',
+          plain: 'Toyokuni Utagawa',
+          kana: 'とよくにうたがわ' },
+        { original: 'Charles W Bartlett',
+          locale: '',
+          name_format: 'given surname generation',
+          given: 'Charles',
+          surname: 'Bartlett',
+          name: 'Charles Bartlett',
+          ascii: 'Charles Bartlett',
+          plain: 'Charles Bartlett' },
+        { original: 'Toyokuni IV',
+          locale: 'ja',
+          generation: 4,
+          name_format: 'surname given generation',
+          given: 'Toyokuni',
+          given_kana: 'とよくに',
+          name: 'Toyokuni IV',
+          ascii: 'Toyokuni IV',
+          plain: 'Toyokuni IV',
+          kana: 'とよくに' },
         { original: 'Hiroshige Utagawa',
           locale: 'ja',
           name_format: 'surname given generation',
@@ -58,7 +110,6 @@ romajiName.init(function() {
           surname: 'Utagawa',
           surname_kana: 'うたがわ',
           given_kanji: '国富',
-          surname_kanji: '',
           name: 'Utagawa Kunitomi',
           ascii: 'Utagawa Kunitomi',
           plain: 'Utagawa Kunitomi',
@@ -71,7 +122,6 @@ romajiName.init(function() {
           given: 'Kiyonobu',
           given_kana: 'きよのぶ',
           given_kanji: '清信',
-          surname_kanji: '',
           name: 'Kiyonobu II',
           ascii: 'Kiyonobu II',
           plain: 'Kiyonobu II',
@@ -184,7 +234,7 @@ romajiName.init(function() {
           kanji: '歌川広重',
           surname_kanji: '歌川',
           given_kanji: '広重' },
-        { original: '歌川国郷',
+        { original: '歌川 国郷',
           locale: 'ja',
           kanji: '歌川国郷',
           surname_kanji: '歌川',
@@ -202,8 +252,16 @@ romajiName.init(function() {
     ];
 
     tests.forEach(function(expected) {
-        var actual = romajiName.parseName(expected.original);
-        assert.deepEqual(actual, expected);
+        var s = +(new Date);
+        var actual = romajiName.parseName(expected);
+        console.log((new Date) - s, expected.original)
+        try {
+            assert.deepEqual(actual, expected);
+        } catch(e) {
+            console.log(actual);
+            console.log(expected);
+            throw e;
+        }
     });
 
     (function() {
@@ -214,14 +272,13 @@ romajiName.init(function() {
           given_kana: 'とよしげ',
           surname: 'Utagawa',
           surname_kana: 'うたがわ',
-          given_kanji: '国富',
-          surname_kanji: '',
+          given_kanji: '国重',
           name: 'Utagawa Toyoshige II',
           ascii: 'Utagawa Toyoshige II',
           plain: 'Utagawa Toyoshige II',
           kana: 'うたがわとよしげ',
           generation: 2,
-          kanji: '国富' };
+          kanji: '国重' };
         var actual = romajiName.mergeNames(
             romajiName.parseName("Utagawa Kunitomi I (国富)"),
             romajiName.parseName("Toyoshige II (国重　二代)")

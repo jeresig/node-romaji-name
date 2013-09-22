@@ -40,11 +40,11 @@ var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s]*[\u4e00-\u9faf]/;
 // All the conceivable bad accents that people could use instead of the typical
 // Romaji stress mark. The first character in each list has the proper accent.
 var letterToAccents = {
-    'a': 'āáàăắặâấåäǟãą',
-    'e': 'ēéèêềěëėę',
-    'i': 'īíìîïįı',
-    'o': 'ōóòôöőõȭȯȱøỏ',
-    'u': 'ūúùŭûůüųűư'
+    'a': 'āâáàăắặấåäǟãą',
+    'e': 'ēêéèềěëėę',
+    'i': 'īîíìïįı',
+    'o': 'ōôóòöőõȭȯȱøỏ',
+    'u': 'ūûúùŭůüųűư'
 };
 
 // Common cases where another form is more-commonly used
@@ -57,7 +57,6 @@ var badRomaji = {
 var badMUsage = /m([^aeiouy]|$)/i;
 
 // Build up the maps for later replacements
-var letterToGoodAccent = {};
 var accentToLetter = {};
 var accentToASCII = {};
 var accentToGoodAccent = {};
@@ -75,9 +74,10 @@ Object.keys(letterToAccents).forEach(function(letter) {
         accentToGoodAccent[accent] = goodAccent;
     });
 
-    letterToGoodAccent[letter] = goodAccent;
-    asciiToAccent[letterPair] = goodAccent;
-    asciiToLetter[letterPair] = letter;
+    // The use of 'ii' is commonly accepted, no accent is used
+    if (letter !== "i") {
+        asciiToAccent[letterPair] = goodAccent;
+    }
 
     // Hack for usage of "ou", treat the same as "oo"
     if (letter === "o") {
@@ -89,13 +89,27 @@ Object.keys(letterToAccents).forEach(function(letter) {
 module.exports = {
     init: function(callback) {
         enamdict.init(callback);
+        return this;
     },
 
-    parseName: function(name) {
+    parseName: function(name, options) {
+        // Assume that we're re-parsing a name object
+        if (typeof name === "object") {
+            options = name.options;
+            name = name.original || name.name;
+        }
+
         var nameObj = {
             original: name,
             locale: "ja"
         };
+
+        if (options) {
+            nameObj.options = options;
+        }
+
+        // Fallback options object
+        options = options || {};
 
         var cleaned = this.cleanWhitespace(name);
 
@@ -106,6 +120,10 @@ module.exports = {
         // Clean up the string
         cleaned = this.flipName(cleaned);
         cleaned = this.stripPunctuation(cleaned);
+
+        // Fix some other things we don't care about
+        cleaned = this.stripInitials(cleaned);
+
         cleaned = cleaned.trim();
 
         var uncorrectedName = cleaned;
@@ -147,11 +165,21 @@ module.exports = {
                 return nameObj;
             }
 
+            // If givenFirst is specified then we assume that the given
+            // name is always first. This doesn't matter for non-Japanese
+            // names (like above) but does matter for Japanese names,
+            // which are expected to be surname first.
+            if (options.givenFirst) {
+                var tmp = surname;
+                surname = given;
+                given = tmp;
+            }
+
             // Look up the two parts of the name in ENAMDICT
             var givenEntries = enamdict.find(given);
             var surnameEntries = enamdict.find(surname);
 
-            if (givenEntries || surnameEntries) {
+            if (given && surname && (givenEntries || surnameEntries)) {
                 // Fix cases where only one of the two names was found
                 if (!givenEntries || !surnameEntries) {
                     if (givenEntries) {
@@ -240,10 +268,10 @@ module.exports = {
 
                     // If only one of the kanji is found
                     if (nameObj.given_kanji !== nameObj.surname_kanji) {
-                        if (nameObj.given_kanji) {
+                        if (nameObj.given_kanji !== nameKanji) {
                             nameObj.surname_kanji = nameKanji
                                 .replace(nameObj.given_kanji, "");
-                        } else {
+                        } else if (nameObj.surname_kanji !== nameKanji) {
                             nameObj.given_kanji = nameKanji
                                 .replace(nameObj.surname_kanji, "");
                         }
@@ -253,32 +281,50 @@ module.exports = {
                 this.injectFullName(nameObj);
 
             } else {
-                nameObj.surname = surname;
+                if (surname) {
+                    nameObj.surname = surname;
+                    nameObj.surname_kana = this.toKana(surname);
+                }
+
                 nameObj.given = given;
-                nameObj.surname_kana = this.toKana(surname);
                 nameObj.given_kana = this.toKana(given);
+
+                if (nameObj.kanji) {
+                    nameObj.given_kanji = nameObj.kanji;
+                }
+
                 this.injectFullName(nameObj);
             }
 
-        // Otherwise there was only kanji left
-        } else if (nameObj.kanji) {
-            // Check whole name
-            var kanjiName = enamdict.findKanji(nameObj.kanji);
+        // Otherwise there was only kanji left and we haven't already
+        // detected which characters belong to the surname or given name
+        } else if (nameObj.kanji && !nameObj.given_kanji) {
+            if (nameObj.kanji.length <= 2) {
+                // If it's very short then it's probably not a full
+                // name, just the given name.
+                nameObj.given_kanji = nameObj.kanji;
 
-            if (kanjiName) {
-                if (kanjiName.type() === "given") {
-                    nameObj.given_kanji = nameObj.kanji;
+            } else if (nameObj.kanji.length <= 3 &&
+                    enamdict.findKanji(nameObj.kanji)) {
+                // Assume that if we have an exact match that it's
+                // a valid given name (the surname, alone, is almost never
+                // specified).
+                nameObj.given_kanji = nameObj.kanji;
 
-                } else if (kanjiName.type() === "surname") {
-                    nameObj.surname_kanji = nameObj.kanji;
-                }
+            } else if (nameObj.kanji.length === 4) {
+                // Almost always a name of length 4 means that there is
+                // a surname of length 2 and a given name of length 2
+                nameObj.surname_kanji = nameObj.kanji.substr(0, 2);
+                nameObj.given_kanji = nameObj.kanji.substr(2);
 
             } else {
+                // For everything else we need to slice-and-dice the
+                // name to make sure that we have the correct name parts
                 var complete = [];
                 var partial = [];
 
                 // Split name 1 .. n
-                for (var pos = 1; pos < nameObj.kanji.length; pos++) {
+                for (var pos = 2; pos < nameObj.kanji.length - 1; pos++) {
                     var surname = nameObj.kanji.substr(0, pos);
                     var given = nameObj.kanji.substr(pos);
 
@@ -343,6 +389,8 @@ module.exports = {
     mergeNames: function(base, child) {
         var nameObj = {};
         var mergeBlacklist = ["generation", "kanji"];
+        var copyProps = ["original", "given", "given_kana", "given_kanji",
+            "generation"];
 
         for (var prop in base) {
             if (mergeBlacklist.indexOf(prop) < 0) {
@@ -350,11 +398,11 @@ module.exports = {
             }
         }
 
-        for (var prop in child) {
-            if (child[prop]) {
+        copyProps.forEach(function(prop) {
+            if (prop in child) {
                 nameObj[prop] = child[prop];
             }
-        }
+        });
 
         // Generate new: name/name_ascii/name_plain/kana
         this.injectFullName(nameObj);
@@ -459,25 +507,32 @@ module.exports = {
         return bulkReplace(name, asciiToAccent);
     },
 
-    stripRepeatedVowel: function(name) {
-        return bulkReplace(name, asciiToLetter);
+    stripInitials: function(name) {
+        return name.replace(/(^| )[a-z]( |$)/ig, "$1$2");
     },
 
     extractKanji: function(name, nameObj) {
         var kanji = "";
 
         name = name.replace(kanjiRegex, function(all) {
-            kanji = all;
+            kanji = all.trim();
             return "";
         });
 
-        // Strip extraneous whitespace from the kanji
-        kanji = kanji.replace(/\s+/g, "");
-
         if (kanji) {
             // Extract generation info from kanji if it exists
-            kanji = this.extractGeneration(kanji, nameObj);
-            nameObj.kanji = kanji;
+            kanji = this.extractGeneration(kanji, nameObj).trim();
+
+            var parts = kanji.split(/\s+/);
+
+            // Surname and given name are already specified
+            if (parts.length === 2) {
+                nameObj.surname_kanji = parts[0];
+                nameObj.given_kanji = parts[1];
+            }
+
+            // Strip extraneous whitespace from the kanji
+            nameObj.kanji = kanji.replace(/\s+/g, "");
         }
 
         return name;

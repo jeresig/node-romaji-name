@@ -1,6 +1,6 @@
 {
   "name": "romaji-name",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Normalize and fix common issues with Romaji-based Japanese names.",
   "main": "romaji-name.js",
   "scripts": {
@@ -23,8 +23,8 @@
     "url": "https://github.com/jeresig/node-romaji-name/issues"
   },
   "dependencies": {
-    "enamdict": "0.0.5",
-    "hepburn": "jeresig/hepburn",
+    "enamdict": "0.0.8",
+    "hepburn": "0.2.0",
     "bulk-replace": "0.0.1"
   }
 }
