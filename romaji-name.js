@@ -56,6 +56,12 @@ var badRomaji = {
 // Should be using n instead
 var badMUsage = /m([^aeiouy]|$)/i;
 
+// The formatting for when the full names are generated
+var localeFormatting = {
+    "": "given surname generation",
+    "ja": "surname given generation"
+};
+
 // Build up the maps for later replacements
 var accentToLetter = {};
 var accentToASCII = {};
@@ -151,9 +157,6 @@ module.exports = {
                 var given = RegExp.$1;
             }
 
-            // Set a name format for later name generation
-            nameObj.name_format = "surname given generation";
-
             // Make sure the names are valid romaji before continuing
             if ((surname && !this.toKana(surname)) ||
                     (given && !this.toKana(given))) {
@@ -163,7 +166,6 @@ module.exports = {
 
                 nameObj.given = parts[0];
                 nameObj.surname = parts[1] || "";
-                nameObj.name_format = "given surname generation";
                 nameObj.locale = "";
                 this.injectFullName(nameObj);
 
@@ -417,8 +419,9 @@ module.exports = {
 
     genFullName: function(nameObj) {
         var name = "";
+        var formatting = localeFormatting[nameObj.locale] || "";
 
-        nameObj.name_format.split(/\s+/).forEach(function(part) {
+        formatting.split(/\s+/).forEach(function(part) {
             var value = nameObj[part];
 
             if (part === "generation") {
