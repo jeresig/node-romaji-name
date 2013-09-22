@@ -31,7 +31,7 @@ var generationRegex = new RegExp(generationKanji.join("|"), "g");
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' mark, it's used in some names
-var puncRegex = /[!"#$%&()*+,\-.\/:;<=>?@[\\\]^_`{|}~\x3000-\x303F]/g;
+var puncRegex = /[!"#$%&()*+,\-.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]/g;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
@@ -123,7 +123,6 @@ module.exports = {
 
         // Fix some other things we don't care about
         cleaned = this.stripInitials(cleaned);
-
         cleaned = cleaned.trim();
 
         var uncorrectedName = cleaned;

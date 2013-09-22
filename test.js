@@ -3,6 +3,17 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'FUKAZAWA Gunji',
+          locale: 'ja',
+          name_format: 'surname given generation',
+          given: 'Gunji',
+          given_kana: 'ぐんじ',
+          surname: 'Fukazawa',
+          surname_kana: 'ふかざわ',
+          name: 'Fukazawa Gunji',
+          ascii: 'Fukazawa Gunji',
+          plain: 'Fukazawa Gunji',
+          kana: 'ふかざわぐんじ' },
         { original: 'Torii Kiyonaga',
           locale: 'ja',
           name_format: 'surname given generation',
@@ -252,9 +263,7 @@ romajiName.init(function() {
     ];
 
     tests.forEach(function(expected) {
-        var s = +(new Date);
         var actual = romajiName.parseName(expected);
-        console.log((new Date) - s, expected.original)
         try {
             assert.deepEqual(actual, expected);
         } catch(e) {

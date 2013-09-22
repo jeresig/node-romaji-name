@@ -1,6 +1,6 @@
 {
   "name": "romaji-name",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Normalize and fix common issues with Romaji-based Japanese names.",
   "main": "romaji-name.js",
   "scripts": {
