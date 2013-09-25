@@ -170,6 +170,13 @@ module.exports = {
                 nameObj.given = parts[0];
                 nameObj.surname = parts[1] || "";
                 nameObj.locale = "";
+
+                if (options.flipNonJa && nameObj.surname) {
+                    var tmp = nameObj.given;
+                    nameObj.given = nameObj.surname;
+                    nameObj.surname = tmp;
+                }
+
                 this.injectFullName(nameObj);
 
                 return nameObj;
