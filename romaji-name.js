@@ -6,16 +6,16 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /([1１一壱壹]|\bI\b)/i,
-    /([2２二弐貮貳]|\bII\b)/i,
-    /([3３三参參]|\bIII\b)/i,
-    /([4４四肆]|\bIV\b)/i,
-    /([5５五伍]|\bV\b)/i,
-    /([6６六陸]|\bVI\b)/i,
-    /([7７七柒漆質]|\bVII\b)/i,
-    /([8８八捌]|\bVIII\b)/i,
-    /([9９九玖]|\bIX\b)/i,
-    /(10|１０|[十拾]|\bX\b)/i
+    /([一壱壹]|\b(?:1|１|I)\b)/i,
+    /([二弐貮貳]|\b(?:2|２|II)\b)/i,
+    /([三参參]|\b(?:3|３|III)\b)/i,
+    /([四肆]|\b(?:4|４|IV)\b)/i,
+    /([五伍]|\b(?:5|５|V)\b)/i,
+    /([六陸]|\b(?:6|６|VI)\b)/i,
+    /([七柒漆質]|\b(?:7|７|VII)\b)/i,
+    /([八捌]|\b(?:8|８|VIII)\b)/i,
+    /([九玖]|\b(?:9|９|IX)\b)/i,
+    /([十拾]|\b(?:10|１０|X)\b)/i
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
@@ -127,6 +127,11 @@ module.exports = {
         }
 
         var cleaned = this.cleanWhitespace(name);
+
+        // Optionally remove everything enclosed in parentheses
+        if (options.stripParens) {
+            cleaned = this.stripParens(cleaned);
+        }
 
         // Extract extra information (kanji, generation)
         cleaned = this.extractKanji(cleaned, nameObj);
@@ -531,6 +536,10 @@ module.exports = {
         return name.replace(/(^| )[a-z]( |$)/ig, "$1$2");
     },
 
+    stripParens: function(name) {
+        return name.replace(/\s*\([^\)]*\)/g, "");
+    },
+
     extractKanji: function(name, nameObj) {
         var kanji = "";
 
@@ -562,9 +571,20 @@ module.exports = {
         var generation = "";
 
         generations.forEach(function(genRegex, i) {
-            if (genRegex.test(name)) {
+            if (!generation && genRegex.test(name)) {
                 generation = i + 1;
-                name = name.replace(genRegex, "");
+
+                // Handle the case where the name is written:
+                // Given Generation Surname
+                var invertedName = new RegExp("([a-z']+)\\s+" + RegExp.$1 +
+                    "\\s+([a-z']+)", "i");
+
+                if (invertedName.test(name)) {
+                    name = name.replace(invertedName, "$2 $1");
+
+                } else {
+                    name = name.replace(genRegex, "");
+                }
             }
         });
 

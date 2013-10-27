@@ -3,6 +3,39 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Kunisada IV Utagawa',
+          locale: 'ja',
+          generation: 4,
+          given: 'Kunisada',
+          given_kana: 'くにさだ',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Kunisada IV',
+          ascii: 'Utagawa Kunisada IV',
+          plain: 'Utagawa Kunisada IV',
+          kana: 'うたがわくにさだ' },
+        { original: 'Utagawa Kunisada IV (1800-1900)',
+          locale: 'ja',
+          generation: 4,
+          given: 'Kunisada',
+          given_kana: 'くにさだ',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Kunisada IV',
+          ascii: 'Utagawa Kunisada IV',
+          plain: 'Utagawa Kunisada IV',
+          kana: 'うたがわくにさだ' },
+        { original: 'Utagawa Kuniyoshi (歌川国芳) (Kuniyoshi, Utagawa)',
+          locale: 'ja',
+          options: { stripParens: true },
+          given: 'Kuniyoshi',
+          given_kana: 'くによし',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Kuniyoshi',
+          ascii: 'Utagawa Kuniyoshi',
+          plain: 'Utagawa Kuniyoshi',
+          kana: 'うたがわくによし' },
         { original: 'Hiroshige',
           locale: 'ja',
           options: { givenFirst: true },
@@ -276,8 +309,8 @@ romajiName.init(function() {
         try {
             assert.deepEqual(actual, expected);
         } catch(e) {
-            console.log(actual);
-            console.log(expected);
+            console.log("Actual:", actual);
+            console.log("Expected:", expected);
             throw e;
         }
     });
