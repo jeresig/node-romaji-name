@@ -460,7 +460,7 @@ module.exports = {
 
         var name = this.genFullName(nameObj);
 
-        if (name) {
+        if (nameObj.given && name) {
             nameObj.name = name;
             nameObj.ascii = nameObj.locale === "ja" ?
                 this.stripAccentsToASCII(name) : name;
