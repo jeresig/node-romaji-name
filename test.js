@@ -3,6 +3,18 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Utagawa Kunitomi (国富 Toyokuni II)',
+          locale: 'ja',
+          kanji: '国富',
+          given: 'Kunitomi',
+          given_kana: 'くにとみ',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          given_kanji: '国富',
+          name: 'Utagawa Kunitomi',
+          ascii: 'Utagawa Kunitomi',
+          plain: 'Utagawa Kunitomi',
+          kana: 'うたがわくにとみ' },
         { original: 'Kunisada IV Utagawa',
           locale: 'ja',
           generation: 4,

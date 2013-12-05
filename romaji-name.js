@@ -570,8 +570,11 @@ module.exports = {
     extractGeneration: function(name, nameObj) {
         var generation = "";
 
+        // Don't look for the generation inside parens
+        var trimName = this.stripParens(name);
+
         generations.forEach(function(genRegex, i) {
-            if (!generation && genRegex.test(name)) {
+            if (!generation && genRegex.test(trimName)) {
                 generation = i + 1;
 
                 // Handle the case where the name is written:
