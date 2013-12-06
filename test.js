@@ -3,6 +3,22 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Tokuu',
+          locale: 'ja',
+          given: 'Tokū',
+          given_kana: 'とくう',
+          name: 'Tokū',
+          ascii: 'Tokuu',
+          plain: 'Toku',
+          kana: 'とくう' },
+        { original: 'Ryûkôsai',
+          locale: 'ja',
+          given: 'Ryūkōsai',
+          given_kana: 'りゅうこおさい',
+          name: 'Ryūkōsai',
+          ascii: 'Ryuukoosai',
+          plain: 'Ryukosai',
+          kana: 'りゅうこおさい' },
         { original: 'Utagawa Kunitomi (国富 Toyokuni II)',
           locale: 'ja',
           kanji: '国富',

@@ -306,11 +306,11 @@ module.exports = {
 
             } else {
                 if (surname) {
-                    nameObj.surname = surname;
+                    nameObj.surname = this.convertRepeatedVowel(surname);
                     nameObj.surname_kana = this.toKana(surname);
                 }
 
-                nameObj.given = given;
+                nameObj.given = this.convertRepeatedVowel(given);
                 nameObj.given_kana = this.toKana(given);
 
                 if (nameObj.kanji) {
