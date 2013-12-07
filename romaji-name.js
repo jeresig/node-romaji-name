@@ -6,25 +6,19 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /([一壱壹]|\b(?:1|１|I)\b)/i,
-    /([二弐貮貳]|\b(?:2|２|II)\b)/i,
-    /([三参參]|\b(?:3|３|III)\b)/i,
-    /([四肆]|\b(?:4|４|IV)\b)/i,
-    /([五伍]|\b(?:5|５|V)\b)/i,
-    /([六陸]|\b(?:6|６|VI)\b)/i,
-    /([七柒漆質]|\b(?:7|７|VII)\b)/i,
-    /([八捌]|\b(?:8|８|VIII)\b)/i,
-    /([九玖]|\b(?:9|９|IX)\b)/i,
-    /([十拾]|\b(?:10|１０|X)\b)/i
+    /(\b(?:1|１|I)\b|[一壱壹](?:代目|代|世))/i,
+    /(\b(?:2|２|II)\b|[二弐貮貳](?:代目|代|世))/i,
+    /(\b(?:3|３|III)\b|[三参參](?:代目|代|世))/i,
+    /(\b(?:4|４|IV)\b|[四肆](?:代目|代|世))/i,
+    /(\b(?:5|５|V)\b|[五伍](?:代目|代|世))/i,
+    /(\b(?:6|６|VI)\b|[六陸](?:代目|代|世))/i,
+    /(\b(?:7|７|VII)\b|[七柒漆質](?:代目|代|世))/i,
+    /(\b(?:8|８|VIII)\b|[八捌](?:代目|代|世))/i,
+    /(\b(?:9|９|IX)\b|[九玖](?:代目|代|世))/i,
+    /(\b(?:10|１０|X)\b|[十拾](?:代目|代|世))/i
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
-
-// These characters are typically used to denote the generation of the
-// artist, and should be trimmed.
-var generationKanji = ["代", "世"];
-
-var generationRegex = new RegExp(generationKanji.join("|"), "g");
 
 // Punctuation
 // (Both ASCII and Japanese)
@@ -590,9 +584,6 @@ module.exports = {
                 }
             }
         });
-
-        // Remove extraneous generation kanji words
-        name = name.replace(generationRegex, "");
 
         if (generation) {
             nameObj.generation = generation;
