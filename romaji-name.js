@@ -24,8 +24,8 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // (Both ASCII and Japanese)
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
-// Exclude the ' mark, it's used in some names
-var puncRegex = /[!"#$%&()*+,\-.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]/g;
+// Exclude the ' and - marks, they're used in some names
+var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]/g;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
@@ -150,7 +150,7 @@ module.exports = {
         cleaned = this.correctBadRomaji(cleaned);
 
         // Make sure that ASCII characters are left to convert!
-        if (/([a-z']+)\s*([a-z']*)/.test(cleaned)) {
+        if (/([a-z'-]+)\s*([a-z'-]*)/.test(cleaned)) {
             if (RegExp.$2) {
                 var surname = RegExp.$1;
                 var given = RegExp.$2;
@@ -573,8 +573,8 @@ module.exports = {
 
                 // Handle the case where the name is written:
                 // Given Generation Surname
-                var invertedName = new RegExp("([a-z']+)\\s+" + RegExp.$1 +
-                    "\\s+([a-z']+)", "i");
+                var invertedName = new RegExp("([a-z'-]+)\\s+" + RegExp.$1 +
+                    "\\s+([a-z'-]+)", "i");
 
                 if (invertedName.test(name)) {
                     name = name.replace(invertedName, "$2 $1");
@@ -594,7 +594,7 @@ module.exports = {
 
     toKana: function(name) {
         // TODO: Should oo -> ou to match the conventions of ENAMDICT?
-        var ret = hepburn.toHiragana(name);
+        var ret = hepburn.toHiragana(name.replace(/-/g, ""));
         return /[a-z]/i.test(ret) ? "" : ret;
     }
 };
