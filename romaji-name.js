@@ -6,16 +6,16 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /(\b(?:1|１|I)\b|[一壱壹](?:代目|代|世))/i,
+    /(\b(?:1\b|１\b|I(\s|$))|[一壱壹](?:代目|代|世))/i,
     /(\b(?:2|２|II)\b|[二弐貮貳](?:代目|代|世))/i,
     /(\b(?:3|３|III)\b|[三参參](?:代目|代|世))/i,
     /(\b(?:4|４|IV)\b|[四肆](?:代目|代|世))/i,
-    /(\b(?:5|５|V)\b|[五伍](?:代目|代|世))/i,
+    /(\b(?:5\b|５\b|V(\s|$))|[五伍](?:代目|代|世))/i,
     /(\b(?:6|６|VI)\b|[六陸](?:代目|代|世))/i,
     /(\b(?:7|７|VII)\b|[七柒漆質](?:代目|代|世))/i,
     /(\b(?:8|８|VIII)\b|[八捌](?:代目|代|世))/i,
     /(\b(?:9|９|IX)\b|[九玖](?:代目|代|世))/i,
-    /(\b(?:10|１０|X)\b|[十拾](?:代目|代|世))/i
+    /(\b(?:10\b|１０\b|X(\s|$))|[十拾](?:代目|代|世))/i
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
@@ -52,7 +52,7 @@ var badMUsage = /m([^aeiouy]|$)/i;
 
 // The formatting for when the full names are generated
 var localeFormatting = {
-    "": "given surname generation",
+    "": "given middle surname generation",
     "ja": "surname given generation"
 };
 
@@ -132,11 +132,11 @@ module.exports = {
         cleaned = this.extractGeneration(cleaned, nameObj);
 
         // Clean up the string
+        cleaned = this.stripParens(cleaned);
         cleaned = this.flipName(cleaned);
         cleaned = this.stripPunctuation(cleaned);
 
         // Fix some other things we don't care about
-        cleaned = this.stripInitials(cleaned);
         cleaned = cleaned.trim();
 
         var uncorrectedName = cleaned;
@@ -150,7 +150,7 @@ module.exports = {
         cleaned = this.correctBadRomaji(cleaned);
 
         // Make sure that ASCII characters are left to convert!
-        if (/([a-z'-]+)\s*([a-z'-]*)/.test(cleaned)) {
+        if (/([a-z'-]+)\s*([a-z' -]*)\s*/.test(cleaned)) {
             if (RegExp.$2) {
                 var surname = RegExp.$1;
                 var given = RegExp.$2;
@@ -166,9 +166,19 @@ module.exports = {
                 // dealing with a western name so we just leave it as-is.
                 var parts = uncorrectedName.split(/\s+/);
 
-                nameObj.given = parts[0];
-                nameObj.surname = parts[1] || "";
                 nameObj.locale = "";
+                nameObj.given = parts[0];
+                nameObj.surname = "";
+
+                if (parts.length === 2) {
+                    nameObj.surname = parts[1];
+                } else if (parts.length > 2) {
+                    var middle = parts.slice(1, parts.length - 1);
+                    nameObj.middle = middle.map(function(name) {
+                        return name.length === 1 ? name + "." : name;
+                    }).join(" ");
+                    nameObj.surname = parts[parts.length - 1];
+                }
 
                 if (options.flipNonJa && nameObj.surname) {
                     var tmp = nameObj.given;
@@ -526,10 +536,6 @@ module.exports = {
         return bulkReplace(name, asciiToAccent);
     },
 
-    stripInitials: function(name) {
-        return name.replace(/(^| )[a-z]( |$)/ig, "$1$2");
-    },
-
     stripParens: function(name) {
         return name.replace(/\s*\([^\)]*\)/g, "");
     },
@@ -580,7 +586,9 @@ module.exports = {
                     name = name.replace(invertedName, "$2 $1");
 
                 } else {
-                    name = name.replace(genRegex, "");
+                    name = name.replace(genRegex, function(all, name, extra) {
+                        return typeof extra === "string" && extra || "";
+                    });
                 }
             }
         });
