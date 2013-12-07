@@ -53,7 +53,7 @@ var badMUsage = /m([^aeiouy]|$)/i;
 // The formatting for when the full names are generated
 var localeFormatting = {
     "": "given middle surname generation",
-    "ja": "surname given generation"
+    "ja": "surname middle given generation"
 };
 
 // Build up the maps for later replacements
@@ -189,6 +189,14 @@ module.exports = {
                 this.injectFullName(nameObj);
 
                 return nameObj;
+            } else {
+                var parts = given.split(/\s+/);
+
+                if (parts.length > 1) {
+                    var middle = parts.slice(0, parts.length - 1);
+                    nameObj.middle = middle.join(" ");
+                    given = parts[parts.length - 1];
+                }
             }
 
             // If givenFirst is specified then we assume that the given

@@ -3,6 +3,20 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Ike no Taiga (池大雅)',
+          locale: 'ja',
+          kanji: '池大雅',
+          middle: 'no',
+          given: 'Taiga',
+          given_kana: 'たいが',
+          surname: 'Ike',
+          surname_kana: 'いけ',
+          given_kanji: '大雅',
+          surname_kanji: '池',
+          name: 'Ike no Taiga',
+          ascii: 'Ike no Taiga',
+          plain: 'Ike no Taiga',
+          kana: 'いけたいが' },
         { original: 'Romeo V. Tabuena',
           locale: '',
           given: 'Romeo',
