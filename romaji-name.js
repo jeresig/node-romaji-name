@@ -271,49 +271,7 @@ module.exports = {
                     nameObj.surname_kana = surnameKana;
                 }
 
-                // Figure out how the kanji name relates to which name part
-                if (nameObj.kanji) {
-                    var nameKanji = nameObj.kanji;
-                    var givenKanji = givenEntries && givenEntries.kanji();
-                    var surnameKanji = surnameEntries &&
-                        surnameEntries.kanji();
-
-                    if (givenKanji) {
-                        var foundNames = givenKanji.filter(function(kanji) {
-                            return nameKanji.indexOf(kanji) >= 0;
-                        });
-
-                        // Hopefully only one name is found
-                        if (foundNames.length > 0) {
-                            nameObj.given_kanji = foundNames[0];
-                        }
-                    }
-
-                    if (surnameKanji) {
-                        var foundNames = surnameKanji.filter(function(kanji) {
-                            return nameKanji.indexOf(kanji) >= 0;
-                        });
-
-                        // Hopefully only one name is found
-                        if (foundNames.length > 0) {
-                            nameObj.surname_kanji = foundNames[0];
-                        }
-                    }
-
-                    // If only one of the kanji is found
-                    if (nameObj.given_kanji !== nameObj.surname_kanji) {
-                        if (nameObj.given_kanji &&
-                                nameObj.given_kanji !== nameKanji) {
-                            nameObj.surname_kanji = nameKanji
-                                .replace(nameObj.given_kanji, "");
-                        } else if (nameObj.surname_kanji &&
-                                nameObj.surname_kanji !== nameKanji) {
-                            nameObj.given_kanji = nameKanji
-                                .replace(nameObj.surname_kanji, "");
-                        }
-                    }
-                }
-
+                this.splitKanjiByName(nameObj, givenEntries, surnameEntries);
                 this.injectFullName(nameObj);
 
             } else {
@@ -325,125 +283,154 @@ module.exports = {
                 nameObj.given = this.convertRepeatedVowel(given);
                 nameObj.given_kana = this.toKana(given);
 
-                if (nameObj.kanji) {
-                    nameObj.given_kanji = nameObj.kanji;
-                }
-
+                this.splitKanjiByName(nameObj, givenEntries);
                 this.injectFullName(nameObj);
             }
 
         // Otherwise there was only kanji left and we haven't already
         // detected which characters belong to the surname or given name
         } else if (nameObj.kanji && !nameObj.given_kanji) {
-            if (nameObj.kanji.length <= 2) {
-                // If it's very short then it's probably not a full
-                // name, just the given name.
-                nameObj.given_kanji = nameObj.kanji;
-
-            } else if (nameObj.kanji.length <= 3 &&
-                    enamdict.findKanji(nameObj.kanji)) {
-                // Assume that if we have an exact match that it's
-                // a valid given name (the surname, alone, is almost never
-                // specified).
-                nameObj.given_kanji = nameObj.kanji;
-
-            } else if (nameObj.kanji.length === 4) {
-                // Almost always a name of length 4 means that there is
-                // a surname of length 2 and a given name of length 2
-                nameObj.surname_kanji = nameObj.kanji.substr(0, 2);
-                nameObj.given_kanji = nameObj.kanji.substr(2);
-
-            } else {
-                // For everything else we need to slice-and-dice the
-                // name to make sure that we have the correct name parts
-                var complete = [];
-                var partial = [];
-
-                // Split name 1 .. n
-                for (var pos = 2; pos < nameObj.kanji.length - 1; pos++) {
-                    var surname = nameObj.kanji.substr(0, pos);
-                    var given = nameObj.kanji.substr(pos);
-
-                    var match = {
-                        diff: Math.abs(surname.length - given.length),
-                        surname: enamdict.findKanji(surname),
-                        given: enamdict.findKanji(given)
-                    };
-
-                    if (match.surname && match.given) {
-                        complete.push(match);
-
-                    } else if (match.surname || match.given) {
-                        partial.push(match);
-                    }
-                }
-
-                if (complete.length > 0) {
-                    // Find the name with the least-dramatic difference in
-                    // size (e.g. AABB is more likely than ABBB)
-                    complete = complete.sort(function(a, b) {
-                        return Math.abs(a.surname.length - a.given.length) -
-                            Math.abs(b.surname.length - b.given.length);
-                    });
-
-                    nameObj.surname_kanji = complete[0].surname.kanji();
-                    nameObj.given_kanji = complete[0].given.kanji();
-
-                // Otherwise if there are an odd number of partial matches then
-                // we guess and go for the one that evenly splits the name
-                } else if (partial.length > 0) {
-                    partial = partial.filter(function(name) {
-                        return name.diff === 0;
-                    });
-
-                    if (partial.length > 0) {
-                        var partialSurname = partial[0].surname &&
-                            partial[0].surname.kanji();
-                        var partialGiven = partial[0].given &&
-                            partial[0].given.kanji();
-
-                        if (partialSurname) {
-                            partialGiven = nameObj.kanji
-                                .replace(partialSurname, "");
-                        } else {
-                            partialSurname = nameObj.kanji
-                                .replace(partialGiven, "");
-                        }
-
-                        nameObj.surname_kanji = partialSurname;
-                        nameObj.given_kanji = partialGiven;
-                    }
-                }
-
-                // Anything else is going to be too ambiguous
-            }
+            this.splitKanji(nameObj);
         }
 
         return nameObj;
     },
 
-    mergeNames: function(base, child) {
-        var nameObj = {};
-        var mergeBlacklist = ["generation", "kanji"];
-        var copyProps = ["original", "given", "given_kana", "given_kanji",
-            "generation"];
+    splitKanjiByName: function(nameObj, givenEntries, surnameEntries) {
+        // Figure out how the kanji name relates to which name part
+        if (!nameObj.kanji) {
+            return;
+        }
 
-        for (var prop in base) {
-            if (mergeBlacklist.indexOf(prop) < 0) {
-                nameObj[prop] = base[prop];
+        var nameKanji = nameObj.kanji;
+        var givenKanji = givenEntries && givenEntries.kanji();
+        var surnameKanji = surnameEntries &&
+            surnameEntries.kanji();
+
+        if (!givenKanji && !surnameKanji) {
+            this.splitKanji(nameObj);
+            return;
+        }
+
+        if (givenKanji) {
+            var foundNames = givenKanji.filter(function(kanji) {
+                return nameKanji.indexOf(kanji) >= 0;
+            });
+
+            // Hopefully only one name is found
+            if (foundNames.length > 0) {
+                nameObj.given_kanji = foundNames[0];
             }
         }
 
-        copyProps.forEach(function(prop) {
-            if (prop in child) {
-                nameObj[prop] = child[prop];
+        if (surnameKanji) {
+            var foundNames = surnameKanji.filter(function(kanji) {
+                return nameKanji.indexOf(kanji) >= 0;
+            });
+
+            // Hopefully only one name is found
+            if (foundNames.length > 0) {
+                nameObj.surname_kanji = foundNames[0];
             }
-        });
+        }
 
-        // Generate new: name/name_ascii/name_plain/kana
-        this.injectFullName(nameObj);
+        // If only one of the kanji is found
+        if (nameObj.given_kanji !== nameObj.surname_kanji) {
+            if (nameObj.given_kanji &&
+                    nameObj.given_kanji !== nameKanji) {
+                nameObj.surname_kanji = nameKanji
+                    .replace(nameObj.given_kanji, "");
+            } else if (nameObj.surname_kanji &&
+                    nameObj.surname_kanji !== nameKanji) {
+                nameObj.given_kanji = nameKanji
+                    .replace(nameObj.surname_kanji, "");
+            }
+        }
+    },
 
-        return nameObj;
+    splitKanji: function(nameObj) {
+        if (nameObj.kanji.length <= 2) {
+            // If it's very short then it's probably not a full
+            // name, just the given name.
+            nameObj.given_kanji = nameObj.kanji;
+
+        } else if (nameObj.kanji.length <= 3 &&
+                enamdict.findKanji(nameObj.kanji)) {
+            // Assume that if we have an exact match that it's
+            // a valid given name (the surname, alone, is almost never
+            // specified).
+            nameObj.given_kanji = nameObj.kanji;
+
+        } else if (nameObj.kanji.length === 4) {
+            // Almost always a name of length 4 means that there is
+            // a surname of length 2 and a given name of length 2
+            nameObj.surname_kanji = nameObj.kanji.substr(0, 2);
+            nameObj.given_kanji = nameObj.kanji.substr(2);
+
+        } else {
+            // For everything else we need to slice-and-dice the
+            // name to make sure that we have the correct name parts
+            var complete = [];
+            var partial = [];
+
+            // Split name 1 .. n
+            for (var pos = 2; pos < nameObj.kanji.length - 1; pos++) {
+                var surname = nameObj.kanji.substr(0, pos);
+                var given = nameObj.kanji.substr(pos);
+
+                var match = {
+                    diff: Math.abs(surname.length - given.length),
+                    surname: enamdict.findKanji(surname),
+                    given: enamdict.findKanji(given)
+                };
+
+                if (match.surname && match.given) {
+                    complete.push(match);
+
+                } else if (match.surname || match.given) {
+                    partial.push(match);
+                }
+            }
+
+            if (complete.length > 0) {
+                // Find the name with the least-dramatic difference in
+                // size (e.g. AABB is more likely than ABBB)
+                complete = complete.sort(function(a, b) {
+                    return Math.abs(a.surname.length - a.given.length) -
+                        Math.abs(b.surname.length - b.given.length);
+                });
+
+                nameObj.surname_kanji = complete[0].surname.kanji();
+                nameObj.given_kanji = complete[0].given.kanji();
+
+            // Otherwise if there are an odd number of partial matches then
+            // we guess and go for the one that evenly splits the name
+            } else if (partial.length > 0) {
+                partial = partial.filter(function(name) {
+                    return name.diff === 0;
+                });
+
+                if (partial.length > 0) {
+                    var partialSurname = partial[0].surname &&
+                        partial[0].surname.kanji();
+                    var partialGiven = partial[0].given &&
+                        partial[0].given.kanji();
+
+                    if (partialSurname) {
+                        partialGiven = nameObj.kanji
+                            .replace(partialSurname, "");
+                    } else {
+                        partialSurname = nameObj.kanji
+                            .replace(partialGiven, "");
+                    }
+
+                    nameObj.surname_kanji = partialSurname;
+                    nameObj.given_kanji = partialGiven;
+                }
+            }
+
+            // Anything else is going to be too ambiguous
+        }
     },
 
     genFullName: function(nameObj) {

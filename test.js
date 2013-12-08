@@ -3,6 +3,53 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Gigadō Ashiyuki 戯画堂 芦幸',
+          locale: 'ja',
+          surname_kanji: '戯画堂',
+          given_kanji: '芦幸',
+          kanji: '戯画堂芦幸',
+          surname: 'Gigadō',
+          surname_kana: 'ぎがどお',
+          given: 'Ashiyuki',
+          given_kana: 'あしゆき',
+          name: 'Gigadō Ashiyuki',
+          ascii: 'Gigadoo Ashiyuki',
+          plain: 'Gigado Ashiyuki',
+          kana: 'ぎがどおあしゆき' },
+        { original: 'Gigadō Ashiyuki 戯画堂芦幸',
+          locale: 'ja',
+          kanji: '戯画堂芦幸',
+          surname: 'Gigadō',
+          surname_kana: 'ぎがどお',
+          given: 'Ashiyuki',
+          given_kana: 'あしゆき',
+          name: 'Gigadō Ashiyuki',
+          ascii: 'Gigadoo Ashiyuki',
+          plain: 'Gigado Ashiyuki',
+          kana: 'ぎがどおあしゆき' },
+        { original: 'Toyoshige II (豊重　二代)',
+          locale: 'ja',
+          generation: 2,
+          kanji: '豊重',
+          given: 'Toyoshige',
+          given_kana: 'とよしげ',
+          given_kanji: '豊重',
+          name: 'Toyoshige II',
+          ascii: 'Toyoshige II',
+          plain: 'Toyoshige II',
+          kana: 'とよしげ' },
+        { original: 'Hiroshige II 歌川広重 (2代目)',
+          locale: 'ja',
+          kanji: '歌川広重',
+          generation: 2,
+          given: 'Hiroshige',
+          given_kana: 'ひろしげ',
+          given_kanji: '広重',
+          surname_kanji: '歌川',
+          name: 'Hiroshige II',
+          ascii: 'Hiroshige II',
+          plain: 'Hiroshige II',
+          kana: 'ひろしげ' },
         { original: 'Ike no Taiga (池大雅)',
           locale: 'ja',
           kanji: '池大雅',
@@ -477,27 +524,12 @@ romajiName.init(function() {
             givenFirst: true
         });
         expected.options.givenFirst = true;
-        assert.deepEqual(actual, expected);
-    })();
-
-    (function() {
-        var expected = { original: 'Toyoshige II (国重　二代)',
-          locale: 'ja',
-          given: 'Toyoshige',
-          given_kana: 'とよしげ',
-          surname: 'Utagawa',
-          surname_kana: 'うたがわ',
-          given_kanji: '国重',
-          name: 'Utagawa Toyoshige II',
-          ascii: 'Utagawa Toyoshige II',
-          plain: 'Utagawa Toyoshige II',
-          kana: 'うたがわとよしげ',
-          generation: 2,
-          kanji: '国重' };
-        var actual = romajiName.mergeNames(
-            romajiName.parseName("Utagawa Kunitomi I (国富)"),
-            romajiName.parseName("Toyoshige II (国重　二代)")
-        );
-        assert.deepEqual(actual, expected);
+        try {
+            assert.deepEqual(actual, expected);
+        } catch(e) {
+            console.log("Actual:", actual);
+            console.log("Expected:", expected);
+            throw e;
+        }
     })();
 });
