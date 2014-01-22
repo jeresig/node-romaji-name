@@ -3,6 +3,12 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: '柳川重信〈２〉',
+          locale: 'ja',
+          kanji: '柳川重信',
+          generation: 2,
+          surname_kanji: '柳川',
+          given_kanji: '重信' },
         { original: 'Gigadō Ashiyuki 戯画堂 芦幸',
           locale: 'ja',
           surname_kanji: '戯画堂',
