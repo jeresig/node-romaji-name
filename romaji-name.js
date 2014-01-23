@@ -25,7 +25,7 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]/g;
+var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)—(?:\s|$)/g;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
