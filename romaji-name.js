@@ -6,16 +6,16 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /(\b1\b|\bI(\s|$)|[^０-９]１[^０-９]|[一壱壹](?:代目|代|世))/i,
-    /(\b(?:2|II)\b|[^０-９]２[^０-９]|[二弐貮貳](?:代目|代|世))/i,
-    /(\b(?:3|III)\b|[^０-９]３[^０-９]|[三参參](?:代目|代|世))/i,
-    /(\b(?:4|IV)\b|[^０-９]４[^０-９]|[四肆](?:代目|代|世))/i,
-    /(\b(?:5\b|V(\s|$))|[^０-９]５[^０-９]|[五伍](?:代目|代|世))/i,
-    /(\b(?:6|VI)\b|[^０-９]６[^０-９]|[六陸](?:代目|代|世))/i,
-    /(\b(?:7|VII)\b|[^０-９]７[^０-９]|[七柒漆質](?:代目|代|世))/i,
-    /(\b(?:8|VIII)\b|[^０-９]８[^０-９]|[八捌](?:代目|代|世))/i,
-    /(\b(?:9|IX)\b|[^０-９]９[^０-９]|[九玖](?:代目|代|世))/i,
-    /(\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$))|[十拾](?:代目|代|世))/i
+    /([1１一壱壹](?:代目|代|世)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
+    /([2２二弐貮貳](?:代目|代|世)|\b(?:2|II)\b|[^０-９]２[^０-９])/i,
+    /([3３三参參](?:代目|代|世)|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
+    /([4４四肆](?:代目|代|世)|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
+    /([5５五伍](?:代目|代|世)|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
+    /([6６六陸](?:代目|代|世)|\b(?:6|VI)\b|[^０-９]６[^０-９])/i,
+    /([7７七柒漆質](?:代目|代|世)|\b(?:7|VII)\b|[^０-９]７[^０-９])/i,
+    /([8８八捌](?:代目|代|世)|\b(?:8|VIII)\b|[^０-９]８[^０-９])/i,
+    /([9９九玖](?:代目|代|世)|\b(?:9|IX)\b|[^０-９]９[^０-９])/i,
+    /((?:10|１０|[十拾])(?:代目|代|世)|\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$)))/i
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
@@ -25,11 +25,11 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)—(?:\s|$)/g;
+var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/g;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s]*[\u4e00-\u9faf]/;
+var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s\d\(\)]*[\u4e00-\u9faf]/g;
 
 // All the conceivable bad accents that people could use instead of the typical
 // Romaji stress mark. The first character in each list has the proper accent.
@@ -157,6 +157,14 @@ module.exports = {
             } else {
                 var surname = "";
                 var given = RegExp.$1;
+            }
+
+            // The kanji represents a different name (alias?)
+            if (nameObj.differs) {
+                delete nameObj.kanji;
+                delete nameObj.given_kanji;
+                delete nameObj.surname_kanji;
+                delete nameObj.generation;
             }
 
             // Make sure the names are valid romaji before continuing
@@ -292,6 +300,8 @@ module.exports = {
         } else if (nameObj.kanji && !nameObj.given_kanji) {
             this.splitKanji(nameObj);
         }
+
+        delete nameObj.differs;
 
         return nameObj;
     },
@@ -536,10 +546,13 @@ module.exports = {
     },
 
     extractKanji: function(name, nameObj) {
+        var self = this;
         var kanji = "";
 
         name = name.replace(kanjiRegex, function(all) {
-            kanji = all.trim();
+            if (!kanji) {
+                kanji = self.stripPunctuation(all).trim();
+            }
             return "";
         });
 
@@ -563,7 +576,7 @@ module.exports = {
     },
 
     extractGeneration: function(name, nameObj) {
-        var generation = "";
+        var generation;
 
         // Don't look for the generation inside parens
         var trimName = this.stripParens(name);
@@ -587,6 +600,16 @@ module.exports = {
                 }
             }
         });
+
+        // Specifying 1st generation is redundant
+        if (generation === 1) {
+            generation = undefined;
+        }
+
+        // The kanji represents a different name (alias?)
+        if (nameObj.kanji && nameObj.generation !== generation) {
+            nameObj.differs = true;
+        }
 
         if (generation) {
             nameObj.generation = generation;
