@@ -31,6 +31,18 @@ var aposRegex = /(^|[^nm])'/ig;
 // Extract an, at least, 2 character long kanji string
 var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s\d\(\)]*[\u4e00-\u9faf]/g;
 
+// Detect anonymous artists
+var anonRegex = /anonymous|unknown|unidentified|not read/i;
+
+// Detect after
+var afterRegex = /\bafter\b|of school|school of/i;
+
+// Detect attributed
+var attrRegex = /to attributed|attributed to|attributed/ig;
+
+// Detect school
+var schoolRegex = /([\w']+)\s+school/ig;
+
 // All the conceivable bad accents that people could use instead of the typical
 // Romaji stress mark. The first character in each list has the proper accent.
 var letterToAccents = {
@@ -127,7 +139,11 @@ module.exports = {
             cleaned = this.stripParens(cleaned);
         }
 
-        // Extract extra information (kanji, generation)
+        // Extract extra information (anonymous, kanji, generation, etc.)
+        cleaned = this.extractAnonymous(cleaned, nameObj);
+        cleaned = this.extractAfter(cleaned, nameObj);
+        cleaned = this.extractAttributed(cleaned, nameObj);
+        cleaned = this.extractSchool(cleaned, nameObj);
         cleaned = this.extractKanji(cleaned, nameObj);
         cleaned = this.extractGeneration(cleaned, nameObj);
 
@@ -543,6 +559,43 @@ module.exports = {
 
     stripParens: function(name) {
         return name.replace(/\s*\([^\)]*\)/g, "");
+    },
+
+    extractAttributed: function(name, nameObj) {
+        name = name.replace(attrRegex, function(all) {
+            nameObj.attributed = true;
+            return "";
+        });
+
+        return name;
+    },
+
+    extractAfter: function(name, nameObj) {
+        name = name.replace(afterRegex, function(all) {
+            nameObj.after = true;
+            return "";
+        });
+
+        return name;
+    },
+
+    extractSchool: function(name, nameObj) {
+        if (schoolRegex.test(name)) {
+            name = "";
+            nameObj.surname = RegExp.$1;
+        }
+
+        return name;
+    },
+
+    extractAnonymous: function(name, nameObj) {
+        if (anonRegex.test(name)) {
+            name = "";
+            nameObj.anonymous = true;
+            nameObj.locale = "";
+        }
+
+        return name;
     },
 
     extractKanji: function(name, nameObj) {
