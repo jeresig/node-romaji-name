@@ -25,20 +25,20 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/g;
+var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)|^.*\bby\b|formerly|\bet al\b/ig;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s\d\(\)]*[\u4e00-\u9faf]/g;
+var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096][\u4e00-\u9faf\u3041-\u3096\s\d\(\)]*[\u4e00-\u9faf\u3041-\u3096☆？]/g;
 
-// Detect anonymous artists
-var anonRegex = /various.*artists|anonymous|unknown|unidentified|not read/i;
+// Detect unknown artists
+var unknownRegex = /various.*artists|anonymous|unknown|unidentified|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
 
 // Detect after
-var afterRegex = /\bafter\b|of school|school of/i;
+var afterRegex = /\bafter\b|of school|school of|in the style of|of style the in|original/i;
 
 // Detect attributed
-var attrRegex = /to attributed|attributed to|attributed/ig;
+var attrRegex = /to attributed|attributed to|attributed|\batt\b/ig;
 
 // Detect school
 var schoolRegex = /([\w']+)\s+school/ig;
@@ -139,8 +139,8 @@ module.exports = {
             cleaned = this.stripParens(cleaned);
         }
 
-        // Extract extra information (anonymous, kanji, generation, etc.)
-        cleaned = this.extractAnonymous(cleaned, nameObj);
+        // Extract extra information (unknown, kanji, generation, etc.)
+        cleaned = this.extractUnknown(cleaned, nameObj);
         cleaned = this.extractAfter(cleaned, nameObj);
         cleaned = this.extractAttributed(cleaned, nameObj);
         cleaned = this.extractSchool(cleaned, nameObj);
@@ -315,6 +315,13 @@ module.exports = {
         // detected which characters belong to the surname or given name
         } else if (nameObj.kanji && !nameObj.given_kanji) {
             this.splitKanji(nameObj);
+            this.injectFullName(nameObj);
+        }
+
+        // Handle when there's no parseable name
+        if (!nameObj.name && !nameObj.given && !nameObj.surname &&
+                !nameObj.kanji) {
+            nameObj.unknown = true;
         }
 
         delete nameObj.differs;
@@ -496,11 +503,14 @@ module.exports = {
             nameObj.kana = (nameObj.surname_kana || "") + nameObj.given_kana;
         }
 
+        var kanjiGeneration = (nameObj.generation ?
+            " (" +  nameObj.generation + "代目)" : "");
+
         if (nameObj.given_kanji) {
             nameObj.kanji = (nameObj.surname_kanji || "") +
-                nameObj.given_kanji +
-                (nameObj.generation ?
-                    " (" +  nameObj.generation + "代目)" : "");
+                nameObj.given_kanji + kanjiGeneration;
+        } else if (nameObj.kanji) {
+            nameObj.kanji += kanjiGeneration;
         }
 
         return nameObj;
@@ -590,10 +600,10 @@ module.exports = {
         return name;
     },
 
-    extractAnonymous: function(name, nameObj) {
-        if (anonRegex.test(name)) {
+    extractUnknown: function(name, nameObj) {
+        if (unknownRegex.test(name)) {
             name = "";
-            nameObj.anonymous = true;
+            nameObj.unknown = true;
             nameObj.locale = "";
         }
 
