@@ -498,7 +498,9 @@ module.exports = {
 
         if (nameObj.given_kanji) {
             nameObj.kanji = (nameObj.surname_kanji || "") +
-                nameObj.given_kanji;
+                nameObj.given_kanji +
+                (nameObj.generation ?
+                    " (" +  nameObj.generation + "代目)" : "");
         }
 
         return nameObj;
