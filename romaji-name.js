@@ -60,7 +60,7 @@ var badRomaji = {
 };
 
 // Should be using n instead
-var badMUsage = /m([^aeiouy]|$)/i;
+var badMUsage = /(\w)m([^aeiouy]|$)/i;
 
 // The formatting for when the full names are generated
 var localeFormatting = {
@@ -549,7 +549,7 @@ module.exports = {
 
     correctBadRomaji: function(name) {
         name = bulkReplace(name, badRomaji);
-        name = name.replace(badMUsage, "n$1");
+        name = name.replace(badMUsage, "$1n$2");
         return name;
     },
 
