@@ -3,6 +3,9 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Various artists',
+          locale: '',
+          anonymous: true },
         { original: 'M. Uchiyama',
           locale: 'ja',
           given: 'M',

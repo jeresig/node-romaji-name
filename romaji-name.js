@@ -32,7 +32,7 @@ var aposRegex = /(^|[^nm])'/ig;
 var kanjiRegex = /[\u4e00-\u9faf][\u4e00-\u9faf\s\d\(\)]*[\u4e00-\u9faf]/g;
 
 // Detect anonymous artists
-var anonRegex = /anonymous|unknown|unidentified|not read/i;
+var anonRegex = /various.*artists|anonymous|unknown|unidentified|not read/i;
 
 // Detect after
 var afterRegex = /\bafter\b|of school|school of/i;
