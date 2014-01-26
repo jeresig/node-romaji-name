@@ -3,6 +3,16 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Isoda Koryu_sai',
+          locale: 'ja',
+          given: 'Koryu_sai',
+          given_kana: 'こりゅ_さい',
+          surname: 'Isoda',
+          surname_kana: 'いそだ',
+          name: 'Isoda Koryu_sai',
+          ascii: 'Isoda Koryu_sai',
+          plain: 'Isoda Koryu_sai',
+          kana: 'いそだこりゅ_さい' },
         { original: 'Toyokuni III & Hiroshige',
           locale: 'ja',
           generation: 3,

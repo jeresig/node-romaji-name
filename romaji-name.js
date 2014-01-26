@@ -26,7 +26,7 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^_`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)|^.*\bby\b|formerly|\bet al\b/ig;
+var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[_\—\-](?:\s|$)|^.*\bby\b|formerly|\bet al\b/ig;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Extract an, at least, 2 character long kanji string
@@ -183,7 +183,7 @@ module.exports = {
         cleaned = this.correctBadRomaji(cleaned);
 
         // Make sure that ASCII characters are left to convert!
-        if (/([a-z'-]+)\s*([a-z' -]*)\s*/.test(cleaned)) {
+        if (/([a-z'_?-]+)\s*([a-z' _?-]*)\s*/.test(cleaned)) {
             if (RegExp.$2) {
                 var surname = RegExp.$1;
                 var given = RegExp.$2;
@@ -613,7 +613,7 @@ module.exports = {
     },
 
     stripParens: function(name) {
-        return name.replace(/\s*\([^\)]*\)/g, "");
+        return name.replace(/\s*\([^\)]*\).*$/g, "");
     },
 
     extractAttributed: function(name, nameObj) {
