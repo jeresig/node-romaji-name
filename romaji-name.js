@@ -1,3 +1,4 @@
+var fs = require("fs");
 var enamdict = require("enamdict");
 var hepburn = require("hepburn");
 var bulkReplace = require("bulk-replace");
@@ -7,7 +8,7 @@ var bulkReplace = require("bulk-replace");
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
     /([1１一壱壹](?:代目|代|世)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
-    /([2２二弐貮貳](?:代目|代|世)|\b(?:2|II)\b|[^０-９]２[^０-９])/i,
+    /([2２二弐貮貳](?:代目|代|世)|\b(?:2|II|ll)\b|[^０-９]２[^０-９])/i,
     /([3３三参參](?:代目|代|世)|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
     /([4４四肆](?:代目|代|世)|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
     /([5５五伍](?:代目|代|世)|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
@@ -42,6 +43,9 @@ var attrRegex = /to attributed|attributed to|attributed|\batt\b/ig;
 
 // Detect school
 var schoolRegex = /([\w']+)\s+school/ig;
+
+// Name split
+var nameSplitRegex = /\/| and | & /;
 
 // All the conceivable bad accents that people could use instead of the typical
 // Romaji stress mark. The first character in each list has the proper accent.
@@ -98,9 +102,18 @@ Object.keys(letterToAccents).forEach(function(letter) {
     }
 });
 
+// Cached surname/given name lookup
+var fixedNames;
+
 module.exports = {
+    // Location of the fixed names file
+    fixedNamesFile: __dirname + "/fixed-names.json",
+
     init: function(callback) {
-        enamdict.init(callback);
+        enamdict.init(function() {
+            this.loadFixedNames(callback);
+        }.bind(this));
+
         return this;
     },
 
@@ -138,6 +151,10 @@ module.exports = {
         if (options.stripParens) {
             cleaned = this.stripParens(cleaned);
         }
+
+        // Remove other artists
+        // TODO: Find a way to expose this
+        cleaned = this.stripExtraNames(cleaned);
 
         // Extract extra information (unknown, kanji, generation, etc.)
         cleaned = this.extractUnknown(cleaned, nameObj);
@@ -210,6 +227,14 @@ module.exports = {
                     nameObj.surname = tmp;
                 }
 
+                // Use the built-in name fixes as a first list of defense
+                if (fixedNames && (fixedNames.given.indexOf((nameObj.surname || "").toLowerCase()) >= 0 ||
+                        fixedNames.surname.indexOf(nameObj.given.toLowerCase()) >= 0)) {
+                    var tmp = nameObj.given;
+                    nameObj.given = nameObj.surname;
+                    nameObj.surname = tmp;
+                }
+
                 this.injectFullName(nameObj);
 
                 return nameObj;
@@ -231,6 +256,13 @@ module.exports = {
                 var tmp = surname;
                 surname = given;
                 given = tmp;
+
+            // Use the built-in name fixes as a first list of defense
+            } else if (fixedNames && (fixedNames.given.indexOf(surname) >= 0 ||
+                    fixedNames.surname.indexOf(given) >= 0)) {
+                var tmp = given;
+                given = surname;
+                surname = tmp;
             }
 
             // Look up the two parts of the name in ENAMDICT
@@ -327,6 +359,13 @@ module.exports = {
         delete nameObj.differs;
 
         return nameObj;
+    },
+
+    loadFixedNames: function(callback) {
+        fs.readFile(this.fixedNamesFile, function(err, data) {
+            fixedNames = JSON.parse(data.toString("utf8"));
+            callback();
+        });
     },
 
     splitKanjiByName: function(nameObj, givenEntries, surnameEntries) {
@@ -537,6 +576,10 @@ module.exports = {
     flipName: function(name, split) {
         split = split || /,\s*/;
         return name.split(split).reverse().join(" ");
+    },
+
+    stripExtraNames: function(name) {
+        return name.split(nameSplitRegex)[0];
     },
 
     stripPunctuation: function(name) {
