@@ -57,15 +57,6 @@ var letterToAccents = {
     'u': 'ūûúùŭůüųűư'
 };
 
-// Common cases where another form is more-commonly used
-var badRomaji = {
-    "ou": "oo",
-    "si": "shi"
-};
-
-// Should be using n instead
-var badMUsage = /(\w)m([^aeiouy]|$)/i;
-
 // The formatting for when the full names are generated
 var localeFormatting = {
     "": "given middle surname generation",
@@ -305,17 +296,14 @@ module.exports = {
 
                 // Get the romaji names, if they exist in ENAMDICT
                 // If not, fall back to what was provided
-                var givenRomaji = givenEntries ?
-                    givenEntries.romaji() : given;
-                var surnameRomaji = surnameEntries ?
-                    surnameEntries.romaji() : surname;
+                var givenRomaji = this.correctBadRomaji(givenEntries ?
+                    givenEntries.romaji() : given);
+                var surnameRomaji = this.correctBadRomaji(surnameEntries ?
+                    surnameEntries.romaji() : surname);
 
-                // Get the kana names, if they exist in ENAMDICT
-                // If not, generate our own kana using hepburn
-                var givenKana = givenEntries && givenEntries.kana() ||
-                    this.toKana(givenRomaji || "");
-                var surnameKana = surnameEntries && surnameEntries.kana() ||
-                    this.toKana(surnameRomaji || "");
+                // Generate our own kana using hepburn
+                var givenKana = this.toKana(givenRomaji || "");
+                var surnameKana = this.toKana(surnameRomaji || "");
 
                 if (givenRomaji) {
                     nameObj.given = this.convertRepeatedVowel(givenRomaji);
@@ -603,9 +591,7 @@ module.exports = {
     },
 
     correctBadRomaji: function(name) {
-        name = bulkReplace(name, badRomaji);
-        name = name.replace(badMUsage, "$1n$2");
-        return name;
+        return hepburn.cleanRomaji(name).toLowerCase();
     },
 
     convertRepeatedVowel: function(name) {
