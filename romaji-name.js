@@ -26,26 +26,34 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>?@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[_\—\-](?:\s|$)|^.*\bby\b|formerly|\bet al\b/ig;
+var puncRegex = /[!"#$%&()*+,.\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[_?\—\-](?:\s|$)/ig;
 var aposRegex = /(^|[^nm])'/ig;
+
+// Stop words
+var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
 var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096][\u4e00-\u9faf\u3041-\u3096\s\d\(\)]*[\u4e00-\u9faf\u3041-\u3096☆？]/g;
 
 // Detect unknown artists
-var unknownRegex = /various.*artists|anonymous|unknown|unidentified|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
+var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|anonymous|unknown|unidentified|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
 
 // Detect after
-var afterRegex = /\bafter\b|of school|school of|in the style of|of style the in|original/i;
+var afterRegex = /\bafter\b|of school|school of|in the style of|of style the in|original|imitator of|a pupil of|of pupil a/i;
 
 // Detect attributed
-var attrRegex = /to attributed|attributed to|attributed|\batt\b/ig;
+var attrRegex = /to attributed|attributed to|to atributed|atributed to|attributed|\batt\b/ig;
 
 // Detect school
-var schoolRegex = /([\w']+)\s+school/ig;
+var schoolRegex = /([\w']+)\s+(?:school|artist|schule)/ig;
 
 // Name split
-var nameSplitRegex = /\/| and | & /;
+var nameSplitRegex = /\/| with | or | and | & /;
+
+// Entities to convert to the correct punctuation
+var fixPunctuation = {
+    "&#x02bc;": "'"
+};
 
 // All the conceivable bad accents that people could use instead of the typical
 // Romaji stress mark. The first character in each list has the proper accent.
@@ -136,19 +144,23 @@ module.exports = {
             nameObj.options = options;
         }
 
+        // Fix up the punctuation and whitespace before processing
         var cleaned = this.cleanWhitespace(name);
+        cleaned = this.fixPunctuation(cleaned);
 
         // Optionally remove everything enclosed in parentheses
         if (options.stripParens) {
             cleaned = this.stripParens(cleaned);
         }
 
+        // Bail if it's an unknown artist
+        cleaned = this.extractUnknown(cleaned, nameObj);
+
         // Remove other artists
         // TODO: Find a way to expose this
         cleaned = this.stripExtraNames(cleaned);
 
         // Extract extra information (unknown, kanji, generation, etc.)
-        cleaned = this.extractUnknown(cleaned, nameObj);
         cleaned = this.extractAfter(cleaned, nameObj);
         cleaned = this.extractAttributed(cleaned, nameObj);
         cleaned = this.extractSchool(cleaned, nameObj);
@@ -156,9 +168,11 @@ module.exports = {
         cleaned = this.extractGeneration(cleaned, nameObj);
 
         // Clean up the string
+        cleaned = this.repairName(cleaned);
         cleaned = this.stripParens(cleaned);
         cleaned = this.flipName(cleaned);
         cleaned = this.stripPunctuation(cleaned);
+        cleaned = this.stripStopWords(cleaned);
 
         // Fix some other things we don't care about
         cleaned = cleaned.trim();
@@ -192,8 +206,8 @@ module.exports = {
             }
 
             // Make sure the names are valid romaji before continuing
-            if ((surname && !this.toKana(surname)) ||
-                    (given && !this.toKana(given))) {
+            if ((surname && !this.toKana(surname) && surname.length > 1) ||
+                    (given && !this.toKana(given) && given.length > 1)) {
                 // If one of them is not valid then we assume that we're
                 // dealing with a western name so we just leave it as-is.
                 var parts = uncorrectedName.split(/\s+/);
@@ -210,6 +224,11 @@ module.exports = {
                         return name.length === 1 ? name + "." : name;
                     }).join(" ");
                     nameObj.surname = parts[parts.length - 1];
+                } else if (parts.length === 1) {
+                    // If only one name is provided then it's likely the
+                    // surname, which is more common in non-Japanese locales.
+                    nameObj.surname = nameObj.given;
+                    nameObj.given = "";
                 }
 
                 if (options.flipNonJa && nameObj.surname) {
@@ -256,13 +275,16 @@ module.exports = {
                 surname = tmp;
             }
 
+            var allowSwap = (fixedNames.given.indexOf(given) < 0 &&
+                fixedNames.surname.indexOf(surname) < 0);
+
             // Look up the two parts of the name in ENAMDICT
             var givenEntries = enamdict.find(given);
             var surnameEntries = enamdict.find(surname);
 
             if (given && surname && (givenEntries || surnameEntries)) {
                 // Fix cases where only one of the two names was found
-                if (!givenEntries || !surnameEntries) {
+                if (allowSwap && (!givenEntries || !surnameEntries)) {
                     if (givenEntries) {
                         // Swap the names if they're in the wrong place
                         if (givenEntries.type() === "surname") {
@@ -286,7 +308,7 @@ module.exports = {
 
                 // Otherwise both parts of the name were found
                 // Fix the case where the names are reversed
-                } else if ((surnameEntries.type() === "given" ||
+                } else if (allowSwap && (surnameEntries.type() === "given" ||
                         givenEntries.type() === "surname") &&
                         surnameEntries.type() !== givenEntries.type()) {
                     var tmp = surnameEntries;
@@ -519,7 +541,7 @@ module.exports = {
 
         var name = this.genFullName(nameObj);
 
-        if (nameObj.given && name) {
+        if ((nameObj.locale === "ja" ? nameObj.given : nameObj.surname) && name) {
             nameObj.name = name;
             nameObj.ascii = nameObj.locale === "ja" ?
                 this.stripAccentsToASCII(name) : name;
@@ -561,9 +583,27 @@ module.exports = {
         return name.replace(/\r?\n/g, " ").trim();
     },
 
+    fixPunctuation: function(name) {
+        return bulkReplace(name, fixPunctuation);
+    },
+
     flipName: function(name, split) {
         split = split || /,\s*/;
         return name.split(split).reverse().join(" ");
+    },
+
+    repairName: function(name) {
+        // Placeholder characters that will be replaced in a name
+        // This almost always happens on poorly formatted web sites.
+        name = name.replace(/([aeiou])_/g, "$1$1");
+
+        // This is definitely a hack but it seems to be the case
+        // for many of these particular problems.
+        return name.replace(/[?_]/g, "o");
+    },
+
+    stripStopWords: function(name) {
+        return name.replace(stopRegex, "");
     },
 
     stripExtraNames: function(name) {
