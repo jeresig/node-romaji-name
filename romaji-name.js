@@ -26,7 +26,7 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,.\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[_?\—\-](?:\s|$)/ig;
+var puncRegex = /[!"#$%&()*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/ig;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Stop words
@@ -101,16 +101,28 @@ Object.keys(letterToAccents).forEach(function(letter) {
     }
 });
 
-// Cached surname/given name lookup
-var fixedNames;
+// Cached settings
+var defaultSettings = {
+    fixedNames: {
+        given: [],
+        surname: []
+    }
+};
+
+var settings = defaultSettings;
 
 module.exports = {
-    // Location of the fixed names file
-    fixedNamesFile: __dirname + "/fixed-names.json",
+    // Location of the default settings file
+    settingsFile: __dirname + "/settings.json",
 
-    init: function(callback) {
+    init: function(extraSettings, callback) {
+        if (arguments.length === 1) {
+            callback = extraSettings;
+            extraSettings = defaultSettings;
+        }
+
         enamdict.init(function() {
-            this.loadFixedNames(callback);
+            this.loadSettings(extraSettings, callback);
         }.bind(this));
 
         return this;
@@ -188,7 +200,7 @@ module.exports = {
         cleaned = this.correctBadRomaji(cleaned);
 
         // Make sure that ASCII characters are left to convert!
-        if (/([a-z'_?-]+)\s*([a-z' _?-]*)\s*/.test(cleaned)) {
+        if (/([a-z][a-z'-]*)\s*([a-z' -]*)\s*/.test(cleaned)) {
             if (RegExp.$2) {
                 var surname = RegExp.$1;
                 var given = RegExp.$2;
@@ -238,8 +250,8 @@ module.exports = {
                 }
 
                 // Use the built-in name fixes as a first list of defense
-                if (fixedNames && (fixedNames.given.indexOf((nameObj.surname || "").toLowerCase()) >= 0 ||
-                        fixedNames.surname.indexOf(nameObj.given.toLowerCase()) >= 0)) {
+                if (settings.fixedNames.given.indexOf((nameObj.surname || "").toLowerCase()) >= 0 ||
+                        settings.fixedNames.surname.indexOf(nameObj.given.toLowerCase()) >= 0) {
                     var tmp = nameObj.given;
                     nameObj.given = nameObj.surname;
                     nameObj.surname = tmp;
@@ -268,15 +280,15 @@ module.exports = {
                 given = tmp;
 
             // Use the built-in name fixes as a first list of defense
-            } else if (fixedNames && (fixedNames.given.indexOf(surname) >= 0 ||
-                    fixedNames.surname.indexOf(given) >= 0)) {
+            } else if (settings.fixedNames.given.indexOf(surname) >= 0 ||
+                    settings.fixedNames.surname.indexOf(given) >= 0) {
                 var tmp = given;
                 given = surname;
                 surname = tmp;
             }
 
-            var allowSwap = (fixedNames.given.indexOf(given) < 0 &&
-                fixedNames.surname.indexOf(surname) < 0);
+            var allowSwap = settings.fixedNames.given.indexOf(given) < 0 &&
+                settings.fixedNames.surname.indexOf(surname) < 0;
 
             // Look up the two parts of the name in ENAMDICT
             var givenEntries = enamdict.find(given);
@@ -371,9 +383,9 @@ module.exports = {
         return nameObj;
     },
 
-    loadFixedNames: function(callback) {
-        fs.readFile(this.fixedNamesFile, function(err, data) {
-            fixedNames = JSON.parse(data.toString("utf8"));
+    loadSettings: function(extraSettings, callback) {
+        fs.readFile(this.settingsFile, function(err, data) {
+            settings = JSON.parse(data.toString("utf8"));
             callback();
         });
     },
