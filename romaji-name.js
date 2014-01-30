@@ -3,6 +3,10 @@ var enamdict = require("enamdict");
 var hepburn = require("hepburn");
 var bulkReplace = require("bulk-replace");
 
+// TODO:
+// - Move all settings to external settings.json
+// - Support string-based formatting of both names and kanji names
+
 // Thanks to Jed Schmidt!
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
@@ -30,29 +34,37 @@ var puncRegex = /[!"#$%&()*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\
 var aposRegex = /(^|[^nm])'/ig;
 
 // Stop words
-var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two)\b/ig;
+var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two|born|artist)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
 var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096][\u4e00-\u9faf\u3041-\u3096\s\d\(\)]*[\u4e00-\u9faf\u3041-\u3096☆？]/g;
 
 // Detect unknown artists
-var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|anonymous|unknown|unidentified|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
+var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|mixed.*artists|anonymous|unknown|unidentified|unidentied|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
 
 // Detect after
-var afterRegex = /\bafter\b|of school|school of|in the style of|of style the in|original|imitator of|a pupil of|of pupil a/i;
+var afterRegex = /\bafter\b|in the style of|of style the in|original|imitator of|fake/i;
 
 // Detect attributed
 var attrRegex = /to attributed|attributed to|to atributed|atributed to|attributed|\batt\b/ig;
 
 // Detect school
-var schoolRegex = /([\w']+)\s+(?:school|artist|schule)/ig;
+var schoolRegex = /of school|school of|a pupil of|of pupil a|([\w']+)\s+(?:school|schule|umkreis)/ig;
 
 // Name split
-var nameSplitRegex = /\/| with | or | and | & /;
+var nameSplitRegex = /\/| with | or | and | & /ig;
 
-// Entities to convert to the correct punctuation
-var fixPunctuation = {
-    "&#x02bc;": "'"
+// Typos and entities to convert
+var fixTypos = {
+    "&#x02bc;": "'",
+    "shegeharu": "shigeharu",
+    "kasamastu": "kasamatsu",
+    "kunimasav": "kunimasa v",
+    "ktasukawa": "katsukawa",
+    "katuskawa": "katsukawa",
+    "kumyiski": "kumyoshi",
+    "hiroshgie": "hiroshige",
+    "shunkwaku": "shunkaku"
 };
 
 // All the conceivable bad accents that people could use instead of the typical
@@ -156,9 +168,12 @@ module.exports = {
             nameObj.options = options;
         }
 
+        // Simplify the processing by starting in lowercase
+        var cleaned = name.toLowerCase();
+
         // Fix up the punctuation and whitespace before processing
-        var cleaned = this.cleanWhitespace(name);
-        cleaned = this.fixPunctuation(cleaned);
+        cleaned = this.cleanWhitespace(cleaned);
+        cleaned = this.fixTypos(cleaned);
 
         // Optionally remove everything enclosed in parentheses
         if (options.stripParens) {
@@ -169,7 +184,7 @@ module.exports = {
         cleaned = this.extractUnknown(cleaned, nameObj);
 
         // Remove other artists
-        // TODO: Find a way to expose this
+        // TODO: Find a way to expose the other artist names
         cleaned = this.stripExtraNames(cleaned);
 
         // Extract extra information (unknown, kanji, generation, etc.)
@@ -190,9 +205,6 @@ module.exports = {
         cleaned = cleaned.trim();
 
         var uncorrectedName = cleaned;
-
-        // Simplify the processing by starting in lowercase
-        cleaned = cleaned.toLowerCase();
 
         // Fix lots of bad Romaji usage
         cleaned = this.correctAccents(cleaned);
@@ -581,22 +593,26 @@ module.exports = {
         if (nameObj.given) {
             nameObj.given = this.capitalize(nameObj.given);
         }
+        if (nameObj.middle) {
+            nameObj.middle = this.capitalize(nameObj.middle);
+        }
         if (nameObj.surname) {
             nameObj.surname = this.capitalize(nameObj.surname);
         }
     },
 
     capitalize: function(name) {
-        name = name.toLowerCase();
-        return name.substr(0, 1).toUpperCase() + name.substr(1);
+        return name.toLowerCase().replace(/(?:^|\s)./g, function(all) {
+            return all.toUpperCase();
+        });
     },
 
     cleanWhitespace: function(name) {
         return name.replace(/\r?\n/g, " ").trim();
     },
 
-    fixPunctuation: function(name) {
-        return bulkReplace(name, fixPunctuation);
+    fixTypos: function(name) {
+        return bulkReplace(name, fixTypos);
     },
 
     flipName: function(name, split) {
@@ -673,10 +689,17 @@ module.exports = {
     },
 
     extractSchool: function(name, nameObj) {
-        if (schoolRegex.test(name)) {
-            name = "";
-            nameObj.surname = RegExp.$1;
-        }
+        var self = this;
+
+        name = name.replace(schoolRegex, function(all) {
+            nameObj.school = true;
+            if (RegExp.$1) {
+                name = "";
+                nameObj.surname = RegExp.$1;
+                self.injectFullName(nameObj);
+            }
+            return "";
+        });
 
         return name;
     },

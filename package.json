@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "enamdict": "0.0.9",
-    "hepburn": "0.5.1",
+    "hepburn": "0.5.2",
     "bulk-replace": "0.0.1"
   }
 }
