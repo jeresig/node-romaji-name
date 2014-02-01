@@ -64,7 +64,8 @@ var fixTypos = {
     "katuskawa": "katsukawa",
     "kumyiski": "kumyoshi",
     "hiroshgie": "hiroshige",
-    "shunkwaku": "shunkaku"
+    "shunkwaku": "shunkaku",
+    "yackhyo": "yachiyo"
 };
 
 // All the conceivable bad accents that people could use instead of the typical
