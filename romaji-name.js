@@ -11,16 +11,16 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /([1１一壱壹](?:代目|代|世)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
-    /([2２二弐貮貳](?:代目|代|世)|\b(?:2|II|ll)\b|[^０-９]２[^０-９])/i,
-    /([3３三参參](?:代目|代|世)|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
-    /([4４四肆](?:代目|代|世)|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
-    /([5５五伍](?:代目|代|世)|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
-    /([6６六陸](?:代目|代|世)|\b(?:6|VI)\b|[^０-９]６[^０-９])/i,
-    /([7７七柒漆質](?:代目|代|世)|\b(?:7|VII)\b|[^０-９]７[^０-９])/i,
-    /([8８八捌](?:代目|代|世)|\b(?:8|VIII)\b|[^０-９]８[^０-９])/i,
-    /([9９九玖](?:代目|代|世)|\b(?:9|IX)\b|[^０-９]９[^０-９])/i,
-    /((?:10|１０|[十拾])(?:代目|代|世)|\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$)))/i
+    /([1１一壱壹](?:代目|代|世|sei)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
+    /([2２二弐貮貳](?:代目|代|世|sei)|\b(?:2|II|ll)\b|[^０-９]２[^０-９])/i,
+    /([3３三参參](?:代目|代|世|sei)|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
+    /([4４四肆](?:代目|代|世|sei)|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
+    /([5５五伍](?:代目|代|世|sei)|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
+    /([6６六陸](?:代目|代|世|sei)|\b(?:6|VI)\b|[^０-９]６[^０-９])/i,
+    /([7７七柒漆質](?:代目|代|世|sei)|\b(?:7|VII)\b|[^０-９]７[^０-９])/i,
+    /([8８八捌](?:代目|代|世|sei)|\b(?:8|VIII)\b|[^０-９]８[^０-９])/i,
+    /([9９九玖](?:代目|代|世|sei)|\b(?:9|IX)\b|[^０-９]９[^０-９])/i,
+    /((?:10|１０|[十拾])(?:代目|代|世|sei)|\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$)))/i
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
@@ -30,14 +30,14 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/ig;
+var puncRegex = /[!"#$%&()）*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/ig;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Stop words
 var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two|born|artist)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096][\u4e00-\u9faf\u3041-\u3096\s\d\(\)]*[\u4e00-\u9faf\u3041-\u3096☆？]/g;
+var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)\）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？]/g;
 
 // Detect unknown artists
 var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|mixed.*artists|anonymous|unknown|unidentified|unidentied|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
