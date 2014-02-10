@@ -52,7 +52,7 @@ var attrRegex = /to attributed|attributed to|to atributed|atributed to|attribute
 var schoolRegex = /of school|school of|a pupil of|of pupil a|([\w']+)\s+(?:school|schule|umkreis)/ig;
 
 // Name split
-var nameSplitRegex = /\/| with | or | and | & /ig;
+var nameSplitRegex = /\/| with | or | and | & |・/ig;
 
 // Typos and entities to convert
 var fixTypos = {
@@ -734,8 +734,13 @@ module.exports = {
 
             // Surname and given name are already specified
             if (parts.length === 2) {
-                nameObj.surname_kanji = parts[0];
-                nameObj.given_kanji = parts[1];
+                // Handle case where there are multiple space-separated names
+                if (parts[0].length >= 4 && parts[1].length >= 4) {
+                    kanji = parts[0];
+                } else {
+                    nameObj.surname_kanji = parts[0];
+                    nameObj.given_kanji = parts[1];
+                }
             }
 
             // Strip extraneous whitespace from the kanji
