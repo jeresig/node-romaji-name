@@ -147,10 +147,10 @@ module.exports = {
 
         // Assume that we're re-parsing a name object
         if (typeof name === "object") {
-            if (name.options) {
-                for (var prop in name.options) {
+            if (name.settings) {
+                for (var prop in name.settings) {
                     if (!(prop in options)) {
-                        options[prop] = name.options[prop];
+                        options[prop] = name.settings[prop];
                     }
                 }
             }
@@ -166,7 +166,7 @@ module.exports = {
         };
 
         if (Object.keys(options).length > 0) {
-            nameObj.options = options;
+            nameObj.settings = options;
         }
 
         // Simplify the processing by starting in lowercase
