@@ -3,6 +3,20 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Torii Kiyonobu II (鳥居清信 II)',
+          locale: 'ja',
+          generation: 2,
+          kanji: '鳥居清信 2世',
+          given: 'Kiyonobu',
+          given_kana: 'きよのぶ',
+          surname: 'Torii',
+          surname_kana: 'とりい',
+          given_kanji: '清信',
+          surname_kanji: '鳥居',
+          name: 'Torii Kiyonobu II',
+          ascii: 'Torii Kiyonobu II',
+          plain: 'Torii Kiyonobu II',
+          kana: 'とりいきよのぶ' },
         { original: '渓斎英泉 歌川広重',
           locale: 'ja',
           kanji: '渓斎英泉',
@@ -476,7 +490,7 @@ romajiName.init(function() {
           kana: 'とよくに' },
         { original: 'Hiroshige/Toyokuni III',
           locale: 'ja',
-          options: { stripParens: true },
+          settings: { stripParens: true },
           given: 'Hiroshige',
           given_kana: 'ひろしげ',
           name: 'Hiroshige',
@@ -947,7 +961,7 @@ romajiName.init(function() {
           kana: 'うたがわくにさだ' },
         { original: 'Utagawa Kuniyoshi (歌川国芳) (Kuniyoshi, Utagawa)',
           locale: 'ja',
-          options: { stripParens: true },
+          settings: { stripParens: true },
           given: 'Kuniyoshi',
           given_kana: 'くによし',
           surname: 'Utagawa',
@@ -958,7 +972,7 @@ romajiName.init(function() {
           kana: 'うたがわくによし' },
         { original: 'Hiroshige',
           locale: 'ja',
-          options: { givenFirst: true },
+          settings: { givenFirst: true },
           given: 'Hiroshige',
           given_kana: 'ひろしげ',
           name: 'Hiroshige',
@@ -1008,7 +1022,7 @@ romajiName.init(function() {
           kana: 'とりいきよなが' },
         { original: 'Toyokuni UTAGAWA',
           locale: 'ja',
-          options: { givenFirst: true },
+          settings: { givenFirst: true },
           given: 'Toyokuni',
           given_kana: 'とよくに',
           surname: 'Utagawa',
@@ -1238,7 +1252,7 @@ romajiName.init(function() {
     (function() {
         var expected = { original: 'Toyokuni UTAGAWA',
           locale: 'ja',
-          options: { givenFirst: false },
+          settings: { givenFirst: false },
           given: 'Toyokuni',
           given_kana: 'とよくに',
           surname: 'Utagawa',
@@ -1250,7 +1264,7 @@ romajiName.init(function() {
         var actual = romajiName.parseName(expected, {
             givenFirst: true
         });
-        expected.options.givenFirst = true;
+        expected.settings.givenFirst = true;
         try {
             assert.deepEqual(actual, expected);
         } catch(e) {

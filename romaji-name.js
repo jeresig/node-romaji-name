@@ -37,7 +37,7 @@ var aposRegex = /(^|[^nm])'/ig;
 var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two|born|artist)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)\）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？]/g;
+var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)\）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？](?:\s+[ivxIVX]+)?/g;
 
 // Detect unknown artists
 var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|mixed.*artists|anonymous|unknown|unidentified|unidentied|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
