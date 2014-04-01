@@ -303,6 +303,10 @@ module.exports = {
             var allowSwap = settings.fixedNames.given.indexOf(given) < 0 &&
                 settings.fixedNames.surname.indexOf(surname) < 0;
 
+            if (nameObj.given_kanji || nameObj.surname_kanji) {
+                allowSwap = false;
+            }
+
             // Look up the two parts of the name in ENAMDICT
             var givenEntries = enamdict.find(given);
             var surnameEntries = enamdict.find(surname);

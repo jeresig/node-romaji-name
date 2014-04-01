@@ -3,6 +3,19 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: '昇亭 北寿 Shotei Hokuju',
+          locale: 'ja',
+          surname_kanji: '昇亭',
+          given_kanji: '北寿',
+          kanji: '昇亭北寿',
+          given: 'Hokujū',
+          given_kana: 'ほくじゅう',
+          surname: 'Shōtei',
+          surname_kana: 'しょおてい',
+          name: 'Shōtei Hokujū',
+          ascii: 'Shootei Hokujuu',
+          plain: 'Shotei Hokuju',
+          kana: 'しょおていほくじゅう' },
         { original: 'Torii Kiyonobu II (鳥居清信 II)',
           locale: 'ja',
           generation: 2,
