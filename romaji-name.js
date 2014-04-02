@@ -73,7 +73,7 @@ var fixTypos = {
 var letterToAccents = {
     'a': 'āâáàăắặấåäǟãą',
     'e': 'ēêéèềěëėę',
-    'i': 'īîíìïįı',
+    'i': 'īîíìïį',
     'o': 'ōôóòöőõȭȯȱøỏ',
     'u': 'ūûúùŭůüųűư'
 };
@@ -100,6 +100,10 @@ Object.keys(letterToAccents).forEach(function(letter) {
         accentToLetter[accent] = letter;
         accentToASCII[accent] = letterPair;
         accentToGoodAccent[accent] = goodAccent;
+        accent = accent.toUpperCase();
+        accentToLetter[accent] = letter.toUpperCase();
+        accentToASCII[accent] = letter.toUpperCase() + letter;
+        accentToGoodAccent[accent] = goodAccent.toUpperCase();
     });
 
     // The use of 'ii' is commonly accepted, no accent is used
@@ -572,9 +576,24 @@ module.exports = {
 
         if ((nameObj.locale === "ja" ? nameObj.given : nameObj.surname) && name) {
             nameObj.name = name;
-            nameObj.ascii = nameObj.locale === "ja" ?
-                this.stripAccentsToASCII(name) : name;
-            nameObj.plain = this.stripAccents(name);
+            if (nameObj.locale === "ja") {
+                nameObj.ascii = this.genFullName({
+                    locale: nameObj.locale,
+                    given: this.stripAccentsToASCII(nameObj.given || ""),
+                    surname: this.stripAccentsToASCII(nameObj.surname || ""),
+                    middle: this.stripAccentsToASCII(nameObj.middle || ""),
+                    generation: nameObj.generation
+                });
+            } else {
+                nameObj.ascii = nameObj.name;
+            }
+            nameObj.plain = this.genFullName({
+                locale: nameObj.locale,
+                given: this.stripAccents(nameObj.given || ""),
+                surname: this.stripAccents(nameObj.surname || ""),
+                middle: this.stripAccents(nameObj.middle || ""),
+                generation: nameObj.generation
+            });
         }
 
         if (nameObj.given_kana) {

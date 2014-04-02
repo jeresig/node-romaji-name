@@ -3,6 +3,16 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'Maruyama Ōyō',
+          locale: 'ja',
+          given: 'Ōyō',
+          given_kana: 'おおよお',
+          surname: 'Maruyama',
+          surname_kana: 'まるやま',
+          name: 'Maruyama Ōyō',
+          ascii: 'Maruyama Ooyoo',
+          plain: 'Maruyama Oyo',
+          kana: 'まるやまおおよお' },
         { original: '鳥居 清忠 4代目 Torii Kiyotada 4daime',
           locale: 'ja',
           generation: 4,
@@ -425,8 +435,8 @@ romajiName.init(function() {
           surname: 'Ōuchi',
           surname_kana: 'おおうち',
           name: 'Ōuchi Kōhō',
-          ascii: 'Ōuchi Koohoo',
-          plain: 'Ōuchi Koho',
+          ascii: 'Oouchi Koohoo',
+          plain: 'Ouchi Koho',
           kana: 'おおうちこおほお' },
         { original: 'SYOTEI Hokuzyu',
           locale: 'ja',
