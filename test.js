@@ -3,6 +3,20 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: '四代目 歌川 広重 YODAIME UTAGAWA HIROSHIGE',
+          locale: 'ja',
+          generation: 4,
+          surname_kanji: '歌川',
+          given_kanji: '広重',
+          kanji: '歌川広重 4世',
+          given: 'Hiroshige',
+          given_kana: 'ひろしげ',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          name: 'Utagawa Hiroshige IV',
+          ascii: 'Utagawa Hiroshige IV',
+          plain: 'Utagawa Hiroshige IV',
+          kana: 'うたがわひろしげ' },
         { original: '一筆斎 文調 IPPITSUSAI BUNCHOU',
           locale: 'ja',
           surname_kanji: '一筆斎',
