@@ -3,6 +3,19 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: '一筆斎 文調 IPPITSUSAI BUNCHOU',
+          locale: 'ja',
+          surname_kanji: '一筆斎',
+          given_kanji: '文調',
+          kanji: '一筆斎文調',
+          given: 'Bunchō',
+          given_kana: 'ぶんちょお',
+          surname: 'Ippitsusai',
+          surname_kana: 'いっぴつさい',
+          name: 'Ippitsusai Bunchō',
+          ascii: 'Ippitsusai Bunchoo',
+          plain: 'Ippitsusai Buncho',
+          kana: 'いっぴつさいぶんちょお' },
         { original: 'Maruyama Ōyō',
           locale: 'ja',
           given: 'Ōyō',
