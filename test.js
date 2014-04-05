@@ -3,6 +3,11 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: '長谷川 小信 初代',
+          locale: 'ja',
+          surname_kanji: '長谷川',
+          given_kanji: '小信',
+          kanji: '長谷川小信' },
         { original: '四代目 歌川 広重 YODAIME UTAGAWA HIROSHIGE',
           locale: 'ja',
           generation: 4,

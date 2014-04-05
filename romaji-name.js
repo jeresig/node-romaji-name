@@ -11,7 +11,7 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /([1１一壱壹](?:代目|代|世|sei|daime)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
+    /([1１一壱壹初](?:代目|代|世|sei|daime)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
     /([2２二弐貮貳](?:代目|代|世|sei|daime)|nidaime|\b(?:2|II|ll)\b|[^０-９]２[^０-９])/i,
     /([3３三参參](?:代目|代|世|sei|daime)|sandaime|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
     /([4４四肆](?:代目|代|世|sei|daime)|yodaime|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
