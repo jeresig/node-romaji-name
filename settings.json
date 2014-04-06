@@ -2,6 +2,7 @@
     "fixedNames": {
         "surname": [
             "asahi",
+            "asano",
             "baido",
             "baidoo",
             "baidou",
@@ -79,7 +80,6 @@
             "shunbaisai",
             "sora",
             "tachibana",
-            "takeji",
             "takane",
             "tanomura",
             "tashiro",
@@ -107,7 +107,6 @@
             "zenshinsai"
         ],
         "given": [
-            "asano",
             "bertha",
             "brian",
             "charles",
@@ -142,6 +141,7 @@
             "suezan",
             "suizan",
             "shunman",
+            "takeji",
             "ted",
             "terry",
             "terukata",

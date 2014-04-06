@@ -391,6 +391,10 @@ module.exports = {
         } else if (nameObj.kanji && !nameObj.given_kanji) {
             this.splitKanji(nameObj);
             this.injectFullName(nameObj);
+
+        // Otherwise we need to build the full kanji from the parts
+        } else if (nameObj.given_kanji) {
+            this.injectFullName(nameObj);
         }
 
         // Handle when there's no parseable name
@@ -413,7 +417,7 @@ module.exports = {
 
     splitKanjiByName: function(nameObj, givenEntries, surnameEntries) {
         // Figure out how the kanji name relates to which name part
-        if (!nameObj.kanji) {
+        if (!nameObj.kanji || nameObj.given_kanji) {
             return;
         }
 
@@ -604,7 +608,8 @@ module.exports = {
             " " +  nameObj.generation + "世" : "");
 
         if (nameObj.given_kanji) {
-            nameObj.kanji = (nameObj.surname_kanji || "") +
+            nameObj.kanji = (nameObj.surname_kanji ?
+                nameObj.surname_kanji + " " : "") +
                 nameObj.given_kanji + kanjiGeneration;
         } else if (nameObj.kanji) {
             nameObj.kanji += kanjiGeneration;
@@ -752,6 +757,8 @@ module.exports = {
         if (kanji) {
             // Extract generation info from kanji if it exists
             kanji = this.extractGeneration(kanji, nameObj).trim();
+            // Strip extraneous whitespace from the kanji
+            kanji = kanji.replace(/\s+/g, " ").trim();
 
             var parts = kanji.split(/\s+/);
 
@@ -760,14 +767,15 @@ module.exports = {
                 // Handle case where there are multiple space-separated names
                 if (parts[0].length >= 4 && parts[1].length >= 4) {
                     kanji = parts[0];
+
+                    nameObj.kanji = kanji;
                 } else {
                     nameObj.surname_kanji = parts[0];
                     nameObj.given_kanji = parts[1];
                 }
+            } else {
+                nameObj.kanji = kanji;
             }
-
-            // Strip extraneous whitespace from the kanji
-            nameObj.kanji = kanji.replace(/\s+/g, "");
         }
 
         return name;
