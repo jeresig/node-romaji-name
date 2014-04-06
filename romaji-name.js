@@ -307,13 +307,28 @@ module.exports = {
             var allowSwap = settings.fixedNames.given.indexOf(given) < 0 &&
                 settings.fixedNames.surname.indexOf(surname) < 0;
 
-            if (nameObj.given_kanji || nameObj.surname_kanji) {
-                allowSwap = false;
-            }
-
             // Look up the two parts of the name in ENAMDICT
             var givenEntries = enamdict.find(given);
             var surnameEntries = enamdict.find(surname);
+
+            if (nameObj.given_kanji || nameObj.surname_kanji) {
+                allowSwap = false;
+
+                // Assume that the Kanji version of the name is in the right
+                // order. Make sure that the romaji name matches the Kanji.
+                if (given && surname &&
+                    (givenEntries &&
+                    givenEntries.kanji().indexOf(nameObj.surname_kanji) >= 0 ||
+                    surnameEntries &&
+                    surnameEntries.kanji().indexOf(nameObj.given_kanji) >= 0)) {
+                        var tmp = surnameEntries;
+                        surnameEntries = givenEntries;
+                        givenEntries = tmp;
+                        tmp = surname;
+                        surname = given;
+                        given = tmp;
+                }
+            }
 
             if (given && surname && (givenEntries || surnameEntries)) {
                 // Fix cases where only one of the two names was found

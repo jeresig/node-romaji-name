@@ -3,6 +3,19 @@ var romajiName = require("./romaji-name");
 
 romajiName.init(function() {
     var tests = [
+        { original: 'YOSHINOBU FUJII 藤井 吉信',
+          locale: 'ja',
+          surname_kanji: '藤井',
+          given_kanji: '吉信',
+          given: 'Yoshinobu',
+          given_kana: 'よしのぶ',
+          surname: 'Fujii',
+          surname_kana: 'ふじい',
+          name: 'Fujii Yoshinobu',
+          ascii: 'Fujii Yoshinobu',
+          plain: 'Fujii Yoshinobu',
+          kana: 'ふじいよしのぶ',
+          kanji: '藤井 吉信' },
         { original: 'Asano Takeji (浅野竹二)',
           locale: 'ja',
           kanji: '浅野 竹二',
