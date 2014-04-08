@@ -30,14 +30,14 @@ var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
 // http://www.localizingjapan.com/blog/2012/01/20/regular-expressions-for-japanese-text/
 // Include full width characters?
 // Exclude the ' and - marks, they're used in some names
-var puncRegex = /[!"#$%&()）*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/ig;
+var puncRegex = /[!"#$%&*+,._?\/:;<=>@[\\\]^`{|}~\u3000-\u303F]|(?:^|\s)[\—\-](?:\s|$)/ig;
 var aposRegex = /(^|[^nm])'/ig;
 
 // Stop words
 var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two|born|artist)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)\）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？](?:\s+[ivxIVX]+\b)?/g;
+var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)（）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？](?:\s+[ivxIVX]+\b)?/g;
 
 // Detect unknown artists
 var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|mixed.*artists|anonymous|unknown|unidentified|unidentied|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
@@ -711,7 +711,10 @@ module.exports = {
     },
 
     stripParens: function(name) {
-        return name.replace(/\s*\([^\)]*\).*$/g, "");
+        // Start by removing parens and the contents inside of them
+        return name.replace(/\s*[\(（][^\)）]*[\)）]\s*/g, " ")
+            // Strip any remaining parens separately
+            .replace(/[\(（\)）]/g, "");
     },
 
     extractAttributed: function(name, nameObj) {
@@ -764,7 +767,7 @@ module.exports = {
 
         name = name.replace(kanjiRegex, function(all) {
             if (!kanji) {
-                kanji = self.stripPunctuation(all).trim();
+                kanji = self.stripParens(self.stripPunctuation(all)).trim();
             }
             return "";
         });
