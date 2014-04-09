@@ -12,7 +12,7 @@ var bulkReplace = require("bulk-replace");
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
     /([1１一壱壹初](?:代目|代|世|sei|daime)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
-    /([2２二弐貮貳](?:代目|代|世|sei|daime)|nidaime|\b(?:2|II|ll)\b|[^０-９]２[^０-９])/i,
+    /([2２二弐貮貳](?:代目|代|世|sei|daime)|nidaime|\b(?:2|II|ll)\b|Ⅱ|[^０-９]２[^０-９])/i,
     /([3３三参參](?:代目|代|世|sei|daime)|sandaime|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
     /([4４四肆](?:代目|代|世|sei|daime)|yodaime|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
     /([5５五伍](?:代目|代|世|sei|daime)|godaime|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
@@ -37,7 +37,7 @@ var aposRegex = /(^|[^nm])'/ig;
 var stopRegex = /\b(?:^.*\bby|formerly|et al|can be read|signed|signature|may be translated as|seal|possibly|illustrations|professor|artists other two|born|artist)\b/ig;
 
 // Extract an, at least, 2 character long kanji string
-var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)（）]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？](?:\s+[ivxIVX]+\b)?/g;
+var kanjiRegex = /[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF][\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF\s\d\(\)（）々]*[\u4e00-\u9faf\u3041-\u3096\u30A0-\u30FF☆？々](?:\s+[ivxIVX]+\b)?/g;
 
 // Detect unknown artists
 var unknownRegex = /unread|unbekannt|no\s+signature|not\s+identified|ansigned|unsigned|numerous|various.*artists|mixed.*artists|anonymous|unknown|unidentified|unidentied|not\s*read|not\s+signed|none|無落款|落款欠|不明|なし/i;
@@ -761,13 +761,18 @@ module.exports = {
         return name;
     },
 
+    fixRepeatedKanji: function(name) {
+        return name.replace(/(.)々/g, "$1$1");
+    },
+
     extractKanji: function(name, nameObj) {
         var self = this;
         var kanji = "";
 
         name = name.replace(kanjiRegex, function(all) {
             if (!kanji) {
-                kanji = self.stripParens(self.stripPunctuation(all)).trim();
+                kanji = self.stripParens(self.stripPunctuation(
+                    self.fixRepeatedKanji(all))).trim();
             }
             return "";
         });
