@@ -3,18 +3,20 @@ romaji-name
 
 This is a utility primarily designed for consuming, parsing, and correcting Japanese names written in [rōmaji](https://en.wikipedia.org/wiki/Romanization_of_Japanese) using proper [Hepburn romanization](https://en.wikipedia.org/wiki/Hepburn_romanization) form.
 
-Beyond fixing common problems with Japanese names written with rōmaji, it's also able to do four amazing things:
+Beyond fixing common problems with Japanese names written with rōmaji, it's also able to do a number of amazing things:
 
 1. It's able to figure out which part of the name is the surname and which is the given name and correct the order, if need be (using the [enamdict](https://npmjs.org/package/enamdict) module).
 2. It's able to fix names that are missing important punctuation or stress marks (such as missing long vowel marks, like **ō**, or `'` for splitting confusing n-vowel usage).
 3. It's able to detect non-Japanese names and leave them intact for future processing.
 4. It's able to provide the kana form of the Japanese name (using [Hiragana](https://en.wikipedia.org/wiki/Hiragana) and the [hepburn](https://npmjs.org/package/hepburn) module).
+5. It's able to correctly split Japanese names, written with Kanji, into their proper given and surnames.
+6. It can detect and properly handle the "generation" portion of the name, both in English and in Japanese (e.g. III, IV, etc.).
 
-I created this utility for helping to consume all of the (extremely-poorly-written) Japanese names found when collecting data for the [Ukiyo-e Database and Search Engine](http://ukiyo-e.org/) I built.
+This utility was created to help consume all of the (extremely-poorly-written) Japanese names found when collecting data for the [Ukiyo-e Database and Search Engine](http://ukiyo-e.org/).
 
 All code is written by [John Resig](http://ejohn.org/) and is released under an MIT license.
 
-If you like this module this you may also be interested in the two other modules that this module depends upon: [enamdict](https://npmjs.org/package/enamdict) and [hepburn](https://npmjs.org/package/hepburn).
+If you like this module this you may also be interested in two other modules that this module depends upon: [enamdict](https://npmjs.org/package/enamdict) and [hepburn](https://npmjs.org/package/hepburn).
 
 Example
 -------
@@ -39,7 +41,6 @@ Which will log out objects that looks something like this:
 // of the missing '
 {
     original: 'Kenichi Nakamura',
-    name_format: 'surname given generation',
     locale: 'ja',
     given: 'Ken\'ichi',
     given_kana: 'けんいち',
@@ -54,7 +55,6 @@ Which will log out objects that looks something like this:
 // Also note the correction of the missing ō
 {
     original: 'Gakuryo Nakamura',
-    name_format: 'surname given generation',
     locale: 'ja',
     given: 'Gakuryō',
     given_kana: 'がくりょう',
@@ -69,7 +69,6 @@ Which will log out objects that looks something like this:
 // (and leaves the locale empty, accordingly)
 {
     original: 'Charles Bartlett',
-    name_format: 'given surname generation',
     locale: '',
     given: 'Charles',
     surname: 'Bartlett',
@@ -93,20 +92,39 @@ This library provides a large number of utility methods for working with names (
 
 ### `init(Function)`
 
-### `parseName(String)`
+Loads the dependent modules (namely, loads the `enamdict` name database). If, for some reason, you don't need to do any surname/given name correction, or correction of stress marks, then you can skip this step (this would likely be a very abnormal usage of this library).
 
-### `mergeNames(Object, Object)`
+### `parseName(String [, Object])`
 
-### Utilities:
+Parses a single string name and returns an object representing that name. Optionally you can specify some settings to modify how the name is parsed, see below for a list of all the settings.
 
-* `correctAccents(String)`
-* `correctBadRomaji(String)`
-* `extractKanji(String, Object)`
-* `extractGeneration(String, Object)`
-* `stripPunctuation(String)`
-* `stripAccents(String)`
-* `stripAccentsToASCII(String)`
-* `stripRepeatedVowel(String)`
-* `toKana(String)`
-* `capitalize(String)`
-* `flipName(String, RegExp?)`
+The returned object will have some, or all, of the following properties:
+
+* `original`: The original string that was passed in to `parseName`.
+* `locale`: A guess at the locale of the name. Only two values exist: `"ja"` and `""`. Note that just because `"ja"` was returned it does not guarantee that the person is actually Japanese, just that the name looks to be Japanese-like (for example: Some Chinese names also return `"ja"`).
+* `given`: A string of the Romaji form of the given name. (Will only exist if a Romaji form was originally provided.)
+* `given_kana`: A string of the Kana form of the given name. (Will only exist if a Romaji form was originally provided and if the locale is `"ja"`.)
+* `given_kanji`: A string of the Kanji form of the given name. (Will only exist if a Kanji form was originally provided.)
+* `middle`:
+* `surname`: A string of the Romaji form of the surname. (Will only exist if a Romaji form was originally provided.)
+* `surname_kana`: A string of the Kana form of the surname. (Will only exist if a Romaji form was originally provided and if the locale is `"ja"`.)
+* `surname_kanji`: A string of the Kanji form of the surname. (Will only exist if a Kanji form was originally provided.)
+* `generation`: Number
+* `name`:
+* `ascii`:
+* `plain`:
+* `kana`:
+* `kanji`:
+* `unknown`: Boolean
+* `attributed`: Boolean
+* `after`: Boolean
+* `school`: Boolean
+* `settings`: Object
+
+**Settings:**
+
+* `flipNonJa`:
+* `stripParens`:
+* `givenFirst`:
+
+### `parseName(Object)`
