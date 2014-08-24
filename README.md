@@ -109,13 +109,13 @@ The returned object will have some, or all, of the following properties:
 * `surname`: A string of the Romaji form of the surname. (Will only exist if a Romaji form was originally provided.)
 * `surname_kana`: A string of the Kana form of the surname. (Will only exist if a Romaji form was originally provided and if the locale is `"ja"`.)
 * `surname_kanji`: A string of the Kanji form of the surname. (Will only exist if a Kanji form was originally provided.)
-* `generation`: Number
-* `name`:
-* `ascii`:
-* `plain`:
-* `kana`:
-* `kanji`:
-* `unknown`: Boolean
+* `generation`: A number representing the generation of the name. For example "John Smith II" would have a generation of `2`.
+* `name`: The full name, in properly-stressed romaji, including the generation. For example: `"Nakamura Gakuryō II"`.
+* `ascii`: The full name, in ascii text, including the generation. This is a proper ascii representation of the name (with long vowels converted from "ō" into "oo", for example). Example: `"Nakamura Gakuryoo II"`.
+* `plain`: The full name, in plain text, including the generation. This is the same as the `name` property but with all stress formatting stripped from it. This could be useful to use in the generation of a URL slug, or some such. It should never be displayed to an end-user as it will almost always be incorrect. Example: `"Nakamura Gakuryo II"`.
+* `kana`: The full name, in kana, without the generation. For example: "なかむらがくりょう".
+* `kanji`: The full name, in kanji, including the generation. For example: `"戯画堂芦幸 2世"`.
+* `unknown`: If the name is a representation of an unknown individual (e.g. it's the string "Unknown", "Not known", or many of the other variations) then this property will exist and be `true`.
 * `attributed`: Boolean
 * `after`: Boolean
 * `school`: Boolean
