@@ -101,6 +101,7 @@ Parses a single string name and returns an object representing that name. Option
 The returned object will have some, or all, of the following properties:
 
 * `original`: The original string that was passed in to `parseName`.
+* `settings`: An object holding the settings that were passed in to the `parseName` method.
 * `locale`: A guess at the locale of the name. Only two values exist: `"ja"` and `""`. Note that just because `"ja"` was returned it does not guarantee that the person is actually Japanese, just that the name looks to be Japanese-like (for example: Some Chinese names also return `"ja"`).
 * `given`: A string of the Romaji form of the given name. (Will only exist if a Romaji form was originally provided.)
 * `given_kana`: A string of the Kana form of the given name. (Will only exist if a Romaji form was originally provided and if the locale is `"ja"`.)
@@ -116,15 +117,18 @@ The returned object will have some, or all, of the following properties:
 * `kana`: The full name, in kana, without the generation. For example: "なかむらがくりょう".
 * `kanji`: The full name, in kanji, including the generation. For example: `"戯画堂芦幸 2世"`.
 * `unknown`: If the name is a representation of an unknown individual (e.g. it's the string "Unknown", "Not known", or many of the other variations) then this property will exist and be `true`.
-* `attributed`: Boolean
-* `after`: Boolean
-* `school`: Boolean
-* `settings`: Object
+* `attributed`: If the name includes a prefix like "Attributed to" then this will be `true`.
+* `after`: If the name includes some sort of "After" or "In the style of" or similar prefix then this will be `true`.
+* `school`: If the name includes a prefix like "School of", "Pupil of", or similar then this will be `true`.
 
 **Settings:**
 
-* `flipNonJa`:
-* `stripParens`:
-* `givenFirst`:
+The following are optional settings that change how the name parsing functions.
+
+* `flipNonJa`: Names that don't have a "ja" locale should be flipped ("Smith John" becomes "John Smith").
+* `stripParens`: Removes anything that's wrapped in parentheses. Normally this is left intact and any extra information is parsed from it.
+* `givenFirst`: Assumes that the first name is always the given name.
 
 ### `parseName(Object)`
+
+Same as the normal `parseName` method but accepts an object that's in the same form as the object returned from `parseName`. This is useful as you can take existing `romaji-name`-generated name objects and re-parse them again (to easily upgrade them when new changes are made to the `romaji-name` module).
