@@ -624,7 +624,7 @@ module.exports = {
 
         if (nameObj.given_kanji) {
             nameObj.kanji = (nameObj.surname_kanji ?
-                nameObj.surname_kanji + " " : "") +
+                nameObj.surname_kanji : "") +
                 nameObj.given_kanji + kanjiGeneration;
         } else if (nameObj.kanji) {
             nameObj.kanji += kanjiGeneration;
