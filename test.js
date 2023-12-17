@@ -956,16 +956,15 @@ romajiName.init(function() {
         { original: 'Ike no Taiga (池大雅)',
           locale: 'ja',
           kanji: '池大雅',
-          middle: 'No',
           given: 'Taiga',
           given_kana: 'たいが',
           surname: 'Ike',
           surname_kana: 'いけ',
           given_kanji: '大雅',
           surname_kanji: '池',
-          name: 'Ike No Taiga',
-          ascii: 'Ike No Taiga',
-          plain: 'Ike No Taiga',
+          name: 'Ike Taiga',
+          ascii: 'Ike Taiga',
+          plain: 'Ike Taiga',
           kana: 'いけたいが' },
         { original: 'Romeo V. Tabuena',
           locale: '',
@@ -1383,7 +1382,22 @@ romajiName.init(function() {
           locale: 'ja',
           kanji: '風折有丈',
           surname_kanji: '風折',
-          given_kanji: '有丈' }
+          given_kanji: '有丈' },
+        {
+          "original": "KAMO NO SUKETAME 鴨 祐為",
+          "locale": "ja",
+          "surname_kanji": "鴨",
+          "given_kanji": "祐為",
+          "given": "Suketame",
+          "given_kana": "すけため",
+          "surname": "Kamo",
+          "surname_kana": "かも",
+          "name": "Kamo Suketame",
+          "ascii": "Kamo Suketame",
+          "plain": "Kamo Suketame",
+          "kana": "かもすけため",
+          "kanji": "鴨祐為"
+        }
     ];
 
     tests.forEach(function(expected) {
@@ -1421,4 +1435,6 @@ romajiName.init(function() {
             throw e;
         }
     })();
+
+    console.log(romajiName.parseName("Yoshida Hanbei 吉田半兵衛"));
 });

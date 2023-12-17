@@ -81,7 +81,7 @@ var letterToAccents = {
 // The formatting for when the full names are generated
 var localeFormatting = {
     "": "given middle surname generation",
-    "ja": "surname middle given generation"
+    "ja": "surname given generation"
 };
 
 // Build up the maps for later replacements
@@ -252,6 +252,9 @@ module.exports = {
                     nameObj.middle = middle.map(function(name) {
                         return name.length === 1 ? name + "." : name;
                     }).join(" ");
+                    if (nameObj.middle.toLowerCase() === "no") {
+                        delete nameObj.middle;
+                    }
                     nameObj.surname = parts[parts.length - 1];
                 } else if (parts.length === 1) {
                     // If only one name is provided then it's likely the
@@ -283,6 +286,9 @@ module.exports = {
                 if (parts.length > 1) {
                     var middle = parts.slice(0, parts.length - 1);
                     nameObj.middle = middle.join(" ");
+                    if (nameObj.middle.toLowerCase() === "no") {
+                        delete nameObj.middle;
+                    }
                     given = parts[parts.length - 1];
                 }
             }
