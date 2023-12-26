@@ -11,16 +11,16 @@ var bulkReplace = require("bulk-replace");
 // https://twitter.com/jedschmidt/status/368179809551388672
 // https://ja.wikipedia.org/wiki/%E5%A4%A7%E5%AD%97_(%E6%95%B0%E5%AD%97)
 var generations = [
-    /([1１一壱壹初](?:代目|代|世|sei|daime)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/i,
-    /([2２二弐貮貳](?:代目|代|世|sei|daime)|nidaime|\b(?:2|II|ll)\b|Ⅱ|[^０-９]２[^０-９])/i,
-    /([3３三参參](?:代目|代|世|sei|daime)|sandaime|\b(?:3|III)\b|[^０-９]３[^０-９])/i,
-    /([4４四肆](?:代目|代|世|sei|daime)|yodaime|\b(?:4|IV)\b|[^０-９]４[^０-９])/i,
-    /([5５五伍](?:代目|代|世|sei|daime)|godaime|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/i,
-    /([6６六陸](?:代目|代|世|sei|daime)|\b(?:6|VI)\b|[^０-９]６[^０-９])/i,
-    /([7７七柒漆質](?:代目|代|世|sei|daime)|\b(?:7|VII)\b|[^０-９]７[^０-９])/i,
-    /([8８八捌](?:代目|代|世|sei|daime)|\b(?:8|VIII)\b|[^０-９]８[^０-９])/i,
-    /([9９九玖](?:代目|代|世|sei|daime)|\b(?:9|IX)\b|[^０-９]９[^０-９])/i,
-    /((?:10|１０|[十拾])(?:代目|代|世|sei|daime)|\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$)))/i
+    /([1１一壱壹初](?:代目|代|世|sei|daime)|\b1\b|\bI(\s|$)|[^０-９]１[^０-９])/ig,
+    /([2２二弐貮貳](?:代目|代|世|sei|daime)|nidaime|\b(?:2|II|ll)\b|Ⅱ|[^０-９]２[^０-９])/ig,
+    /([3３三参參](?:代目|代|世|sei|daime)|sandaime|\b(?:3|III)\b|[^０-９]３[^０-９])/ig,
+    /([4４四肆](?:代目|代|世|sei|daime)|yodaime|\b(?:4|IV)\b|[^０-９]４[^０-９])/ig,
+    /([5５五伍](?:代目|代|世|sei|daime)|godaime|\b(?:5\b|V(\s|$))|[^０-９]５[^０-９])/ig,
+    /([6６六陸](?:代目|代|世|sei|daime)|\b(?:6|VI)\b|[^０-９]６[^０-９])/ig,
+    /([7７七柒漆質](?:代目|代|世|sei|daime)|\b(?:7|VII)\b|[^０-９]７[^０-９])/ig,
+    /([8８八捌](?:代目|代|世|sei|daime)|\b(?:8|VIII)\b|[^０-９]８[^０-９])/ig,
+    /([9９九玖](?:代目|代|世|sei|daime)|\b(?:9|IX)\b|[^０-９]９[^０-９])/ig,
+    /((?:10|１０|[十拾])(?:代目|代|世|sei|daime)|\b(?:10\b|[^０-９]１０[^０-９]|X(\s|$)))/ig
 ];
 
 var generationMap = [ "", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
@@ -196,8 +196,8 @@ module.exports = {
         cleaned = this.extractAfter(cleaned, nameObj);
         cleaned = this.extractAttributed(cleaned, nameObj);
         cleaned = this.extractSchool(cleaned, nameObj);
-        cleaned = this.extractKanji(cleaned, nameObj);
         cleaned = this.extractGeneration(cleaned, nameObj);
+        cleaned = this.extractKanji(cleaned, nameObj);
 
         // Clean up the string
         cleaned = this.repairName(cleaned);
@@ -839,11 +839,6 @@ module.exports = {
         // Specifying 1st generation is redundant
         if (generation === 1) {
             generation = undefined;
-        }
-
-        // The kanji represents a different name (alias?)
-        if (nameObj.kanji && nameObj.generation !== generation) {
-            nameObj.differs = true;
         }
 
         if (generation) {

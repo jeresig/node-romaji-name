@@ -851,7 +851,7 @@ romajiName.init(function() {
           kanji: '歌川広重 2世',
           surname_kanji: '歌川',
           given_kanji: '広重' },
-        { original: 'Torii Kiyomine (Kiyomitsu II 二代目鳥居清満)',
+        { original: 'Torii Kiyomine',
           locale: 'ja',
           surname: 'Torii',
           surname_kana: 'とりい',
@@ -1397,7 +1397,23 @@ romajiName.init(function() {
           "plain": "Kamo Suketame",
           "kana": "かもすけため",
           "kanji": "鴨祐為"
-        }
+        },
+        {
+          original: 'HASEGAWA SADANOBU 3代目 長谷川 貞信',
+          locale: 'ja',
+          generation: 3,
+          surname_kanji: '長谷川',
+          given_kanji: '貞信',
+          given: 'Sadanobu',
+          given_kana: 'さだのぶ',
+          surname: 'Hasegawa',
+          surname_kana: 'はせがわ',
+          name: 'Hasegawa Sadanobu III',
+          ascii: 'Hasegawa Sadanobu III',
+          plain: 'Hasegawa Sadanobu III',
+          kana: 'はせがわさだのぶ',
+          kanji: '長谷川貞信 3世'
+        },
     ];
 
     tests.forEach(function(expected) {
