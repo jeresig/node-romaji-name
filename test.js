@@ -1414,6 +1414,21 @@ romajiName.init(function() {
           kana: 'はせがわさだのぶ',
           kanji: '長谷川貞信 3世'
         },
+        {
+          original: 'SHODAI UTAGAWA TOYOKUNI 初代 歌川豊国',
+          locale: 'ja',
+          kanji: '歌川豊国',
+          given: 'Toyokuni',
+          given_kana: 'とよくに',
+          surname: 'Utagawa',
+          surname_kana: 'うたがわ',
+          given_kanji: '豊国',
+          surname_kanji: '歌川',
+          name: 'Utagawa Toyokuni',
+          ascii: 'Utagawa Toyokuni',
+          plain: 'Utagawa Toyokuni',
+          kana: 'うたがわとよくに'
+        },
     ];
 
     tests.forEach(function(expected) {
